@@ -935,6 +935,187 @@
         opacity: 0;
       }
     }
+
+    /* Tab Navigation */
+    .nav-tabs-custom {
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.25rem;
+    }
+
+    .nav-tab-custom {
+      background: transparent;
+      border: 0;
+      color: var(--text-muted);
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 0.5rem 0.25rem;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.25s ease;
+      font-family: var(--font);
+    }
+
+    .nav-tab-custom:hover {
+      color: var(--text);
+    }
+
+    .nav-tab-custom.active {
+      color: var(--primary);
+    }
+
+    .nav-tab-custom.active::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: var(--primary);
+      border-radius: 99px;
+      box-shadow: 0 0 10px var(--primary-glow);
+    }
+
+    /* OLV Stage dots in table */
+    .stage-track {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(255, 255, 255, 0.02);
+      padding: 0.35rem 0.65rem;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .stage-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.12);
+      position: relative;
+      transition: all 0.25s ease;
+    }
+
+    .stage-dot.completed {
+      background: var(--success);
+      box-shadow: 0 0 6px var(--success-glow);
+    }
+
+    .stage-dot.active {
+      background: var(--primary);
+      box-shadow: 0 0 8px var(--primary-glow);
+      animation: pulse-blue 1s infinite alternate;
+    }
+
+    .stage-dot.stuck {
+      background: var(--danger);
+      box-shadow: 0 0 10px var(--danger-glow);
+      animation: pulse-red 0.6s infinite alternate;
+    }
+
+    .stage-dot.returned {
+      background: var(--warning);
+      box-shadow: 0 0 8px var(--warning-glow);
+    }
+
+    @keyframes pulse-blue {
+      from { transform: scale(0.95); opacity: 0.7; }
+      to { transform: scale(1.3); opacity: 1; }
+    }
+
+    @keyframes pulse-red {
+      from { transform: scale(0.9); opacity: 0.6; }
+      to { transform: scale(1.35); opacity: 1; }
+    }
+
+    /* Vertical Timeline inside Drawer */
+    .timeline-vertical {
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      padding-left: 1.5rem;
+      margin-top: 1.25rem;
+    }
+
+    .timeline-vertical::before {
+      content: '';
+      position: absolute;
+      left: 4.5px;
+      top: 10px;
+      bottom: 10px;
+      width: 2px;
+      background: var(--border);
+    }
+
+    .timeline-item {
+      position: relative;
+      padding-bottom: 1.5rem;
+    }
+
+    .timeline-item:last-child {
+      padding-bottom: 0;
+    }
+
+    .timeline-badge {
+      position: absolute;
+      left: -1.5rem;
+      top: 4px;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid #0f172a;
+      z-index: 2;
+    }
+
+    .timeline-badge.completed {
+      background: var(--success);
+      box-shadow: 0 0 6px var(--success-glow);
+    }
+
+    .timeline-badge.active {
+      background: var(--primary);
+      box-shadow: 0 0 8px var(--primary-glow);
+      animation: pulse-blue 1s infinite alternate;
+    }
+
+    .timeline-badge.stuck {
+      background: var(--danger);
+      box-shadow: 0 0 10px var(--danger-glow);
+      animation: pulse-red 0.6s infinite alternate;
+    }
+
+    .timeline-badge.returned {
+      background: var(--warning);
+      box-shadow: 0 0 8px var(--warning-glow);
+    }
+
+    .timeline-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .timeline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .timeline-desc {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .timeline-time {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-weight: normal;
+    }
   </style>
 </head>
 <body>
@@ -952,8 +1133,14 @@
       </div>
     </header>
 
-    <!-- KPI Grid -->
-    <div class="kpi-grid">
+    <!-- Tab Navigation -->
+    <div class="nav-tabs-custom">
+      <button class="nav-tab-custom active" data-tab="warehouse">📦 Kho hàng &amp; Outbox</button>
+      <button class="nav-tab-custom" data-tab="olv">💰 Command Center (OLV)</button>
+    </div>
+
+    <!-- Warehouse KPI Grid -->
+    <div class="kpi-grid" id="warehouseKpiGrid">
       <div class="kpi-card">
         <div class="kpi-title">Tổng số mặt hàng (SKU)</div>
         <div class="kpi-value" id="kpiSku">0</div>
@@ -984,8 +1171,32 @@
       </div>
     </div>
 
+    <!-- OLV KPI Grid (hidden by default) -->
+    <div class="kpi-grid" id="olvKpiGrid" style="display: none;">
+      <div class="kpi-card">
+        <div class="kpi-title">Tổng số đơn hàng</div>
+        <div class="kpi-value" id="kpiTotalOrders">0</div>
+        <div class="kpi-footer"><span>Đơn hàng đã tiếp nhận</span></div>
+      </div>
+      <div class="kpi-card stock">
+        <div class="kpi-title">Đơn đang xử lý</div>
+        <div class="kpi-value" id="kpiActiveOrders" style="color: #38bdf8;">0</div>
+        <div class="kpi-footer"><span>Đang chạy trong vòng đời</span></div>
+      </div>
+      <div class="kpi-card value">
+        <div class="kpi-title">Đơn hoàn thành</div>
+        <div class="kpi-value" id="kpiClosedOrders" style="color: #a7f3d0;">0</div>
+        <div class="kpi-footer"><span>Đã đóng hồ sơ (Closed)</span></div>
+      </div>
+      <div class="kpi-card alerts" id="kpiStuckOrdersCard">
+        <div class="kpi-title">Đơn gặp sự cố</div>
+        <div class="kpi-value" id="kpiStuckOrders">0</div>
+        <div class="kpi-footer"><span>Đơn ở trạng thái Kẹt (Stuck)</span></div>
+      </div>
+    </div>
+
     <!-- Control Bar -->
-    <div class="control-bar">
+    <div class="control-bar" id="warehouseControlBar">
       <div class="search-filter-group">
         <!-- Search -->
         <div class="search-wrapper">
@@ -1017,7 +1228,7 @@
     <div class="dashboard-body">
       
       <!-- Left side: Inventory Table -->
-      <div class="content-panel">
+      <div class="content-panel" id="warehouseTablePanel">
         <div class="table-responsive">
           <table>
             <thead>
@@ -1043,6 +1254,57 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
           </svg>
           <p>Không tìm thấy sản phẩm nào phù hợp</p>
+        </div>
+      </div>
+
+      <!-- OLV Left Pane (hidden by default) -->
+      <div id="olvPane" style="display: none; min-width: 0;">
+        <!-- Control Bar for OLV -->
+        <div class="control-bar" style="margin-bottom: 1.5rem; background: rgba(17, 24, 39, 0.7); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.25rem;">
+          <div class="search-filter-group" style="justify-content: space-between; width: 100%; align-items: center;">
+            <div style="display: flex; gap: 0.75rem; align-items: center;">
+              <button class="btn btn-primary" id="btnCreateRandomOrder">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 16px; height: 16px;">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Tạo Đơn Hàng Ngẫu Nhiên
+              </button>
+              <button class="btn btn-secondary" id="btnAutoPlay">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 16px; height: 16px;">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+                </svg>
+                Auto-Play: Tắt
+              </button>
+            </div>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Mô phỏng quy trình bán hàng khép kín</span>
+          </div>
+        </div>
+
+        <!-- Orders Table Panel -->
+        <div class="content-panel">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 110px;">Mã Đơn</th>
+                  <th>Khách Hàng</th>
+                  <th style="text-align: right; width: 120px;">Trị Giá</th>
+                  <th style="text-align: center; width: 230px;">Tiến Trình (9 Chặng)</th>
+                  <th style="text-align: center; width: 110px;">Trạng Thái</th>
+                </tr>
+              </thead>
+              <tbody id="olvRows">
+                <!-- Dynamic order view rows -->
+              </tbody>
+            </table>
+          </div>
+          <!-- Empty State Orders -->
+          <div class="empty-state" id="olvEmptyState" style="display: block; padding: 4rem 2rem; text-align: center; color: var(--text-muted);">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.3;">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 012.008 1.24l.885 1.77a2.25 2.25 0 002.007 1.24h1.98a2.25 2.25 0 002.007-1.24l.885-1.77a2.25 2.25 0 012.007-1.24h3.86m-18 0a2.25 2.25 0 00-2.25 2.25v4.25c0 1.243 1.007 2.25 2.25 2.25h13.5a2.25 2.25 0 002.25-2.25V15.75a2.25 2.25 0 00-2.25-2.25m-18 0A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v2.25" />
+            </svg>
+            <p>Chưa có đơn hàng nào được tạo</p>
+          </div>
         </div>
       </div>
 
@@ -1122,6 +1384,32 @@
     </form>
   </div>
 
+  <!-- Order Details Drawer Modal -->
+  <div class="drawer-overlay" id="orderDrawerOverlay"></div>
+  <div class="drawer" id="orderDrawer">
+    <div class="drawer-header">
+      <div class="drawer-title" id="orderDrawerTitle">Chi tiết đơn hàng</div>
+      <button class="drawer-close" id="btnOrderDrawerClose">&times;</button>
+    </div>
+    <div class="drawer-body">
+      <!-- Order Info -->
+      <div id="orderInfoContent"></div>
+      
+      <!-- Timeline Header -->
+      <h4 style="margin-top: 1.5rem; font-size: 0.9rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">Tiến trình 9 chặng</h4>
+      
+      <!-- Vertical Timeline -->
+      <div class="timeline-vertical" id="orderTimeline">
+        <!-- Will be dynamically injected by JS -->
+      </div>
+    </div>
+    <div class="drawer-footer" id="orderDrawerFooter">
+      <button class="btn btn-secondary" id="btnOrderReturn" style="border-color: rgba(239, 68, 68, 0.3); color: var(--danger); font-size: 0.8rem; padding: 0.5rem 0.75rem;">Khách Trả Hàng</button>
+      <button class="btn btn-secondary" id="btnOrderStuck" style="border-color: rgba(245, 158, 11, 0.3); color: var(--warning); font-size: 0.8rem; padding: 0.5rem 0.75rem;">Báo Sự Cố</button>
+      <button class="btn btn-primary" id="btnOrderAdvance" style="flex: 1; font-size: 0.8rem; padding: 0.5rem 0.75rem;">Tiến Chặng Tiếp</button>
+    </div>
+  </div>
+
   <!-- Toast Container -->
   <div class="toast-container" id="toastContainer"></div>
 
@@ -1166,10 +1454,46 @@
     const inputName = document.getElementById('inputName');
     const inputQuantity = document.getElementById('inputQuantity');
     const inputUnitPrice = document.getElementById('inputUnitPrice');
+
+    // Navigation and Tab Elements
+    const navTabs = document.querySelectorAll('.nav-tab-custom');
+    const warehouseKpiGrid = document.getElementById('warehouseKpiGrid');
+    const olvKpiGrid = document.getElementById('olvKpiGrid');
+    const warehouseControlBar = document.getElementById('warehouseControlBar');
+    const warehouseTablePanel = document.getElementById('warehouseTablePanel');
+    const olvPane = document.getElementById('olvPane');
+
+    // OLV View Elements
+    const olvRowsEl = document.getElementById('olvRows');
+    const olvEmptyStateEl = document.getElementById('olvEmptyState');
+    const btnCreateRandomOrder = document.getElementById('btnCreateRandomOrder');
+    const btnAutoPlay = document.getElementById('btnAutoPlay');
+
+    // OLV KPI Elements
+    const kpiTotalOrdersEl = document.getElementById('kpiTotalOrders');
+    const kpiActiveOrdersEl = document.getElementById('kpiActiveOrders');
+    const kpiClosedOrdersEl = document.getElementById('kpiClosedOrders');
+    const kpiStuckOrdersEl = document.getElementById('kpiStuckOrders');
+    const kpiStuckOrdersCard = document.getElementById('kpiStuckOrdersCard');
+
+    // Order Drawer Elements
+    const orderDrawerOverlay = document.getElementById('orderDrawerOverlay');
+    const orderDrawer = document.getElementById('orderDrawer');
+    const btnOrderDrawerClose = document.getElementById('btnOrderDrawerClose');
+    const orderInfoContent = document.getElementById('orderInfoContent');
+    const orderTimeline = document.getElementById('orderTimeline');
+    const btnOrderReturn = document.getElementById('btnOrderReturn');
+    const btnOrderStuck = document.getElementById('btnOrderStuck');
+    const btnOrderAdvance = document.getElementById('btnOrderAdvance');
     
     // State
     let items = [];
     let events = [];
+    let orders = [];
+    let activeTab = 'warehouse';
+    let autoPlay = false;
+    let autoPlayInterval = null;
+    let selectedOrderNumber = null;
     let outboxEvents = [];
     let currentFilter = 'all';
     let searchQuery = '';
@@ -1202,6 +1526,442 @@
         });
       }, 3500);
     }
+
+    }
+
+    // TAB NAVIGATION LOGIC
+    function switchTab(tabName) {
+      activeTab = tabName;
+      
+      // Update active nav button
+      navTabs.forEach(t => {
+        if (t.dataset.tab === tabName) {
+          t.classList.add('active');
+        } else {
+          t.classList.remove('active');
+        }
+      });
+      
+      // Switch view grids/panels
+      if (tabName === 'olv') {
+        warehouseKpiGrid.style.display = 'none';
+        warehouseControlBar.style.display = 'none';
+        warehouseTablePanel.style.display = 'none';
+        
+        olvKpiGrid.style.display = 'grid';
+        olvPane.style.display = 'block';
+        
+        loadOlvData();
+      } else {
+        olvKpiGrid.style.display = 'none';
+        olvPane.style.display = 'none';
+        
+        warehouseKpiGrid.style.display = 'grid';
+        warehouseControlBar.style.display = 'flex';
+        warehouseTablePanel.style.display = 'block';
+        
+        // Stop autoplay if leaving OLV
+        if (autoPlay) {
+          toggleAutoPlay();
+        }
+        
+        loadData();
+      }
+    }
+
+    // Bind tab clicks
+    navTabs.forEach(tab => {
+      tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+    });
+
+    // LOAD & RENDER OLV DATA
+    async function loadOlvData() {
+      try {
+        const r = await fetch('/api/lifecycle/orders');
+        if (!r.ok) throw new Error('Không thể tải dữ liệu đơn hàng');
+        orders = await r.json();
+        
+        updateOlvKPIs();
+        renderOlvTable();
+        
+        // If the selected order is open in drawer, refresh the timeline
+        if (selectedOrderNumber) {
+          const updatedOrder = orders.find(o => o.order_number === selectedOrderNumber);
+          if (updatedOrder) {
+            renderTimeline(updatedOrder);
+            updateDrawerActionButtons(updatedOrder);
+          }
+        }
+      } catch (err) {
+        console.error('Lỗi tải dữ liệu OLV:', err);
+      }
+    }
+
+    function updateOlvKPIs() {
+      const total = orders.length;
+      const stuck = orders.filter(o => o.stage_status === 'stuck').length;
+      const closed = orders.filter(o => o.current_stage === 9 && o.stage_status === 'completed').length;
+      const active = total - closed;
+
+      kpiTotalOrdersEl.textContent = numberFmt.format(total);
+      kpiActiveOrdersEl.textContent = numberFmt.format(active);
+      kpiClosedOrdersEl.textContent = numberFmt.format(closed);
+      kpiStuckOrdersEl.textContent = numberFmt.format(stuck);
+
+      if (stuck > 0) {
+        kpiStuckOrdersCard.classList.add('active');
+      } else {
+        kpiStuckOrdersCard.classList.remove('active');
+      }
+    }
+
+    function renderOlvTable() {
+      if (orders.length === 0) {
+        olvRowsEl.innerHTML = '';
+        olvEmptyStateEl.style.display = 'block';
+        return;
+      }
+      
+      olvEmptyStateEl.style.display = 'none';
+      olvRowsEl.innerHTML = orders.map(o => {
+        const total = parseFloat(o.total_amount || 0);
+        
+        let statusBadge = '';
+        if (o.stage_status === 'stuck') {
+          statusBadge = '<span class="status-badge status-failed">BỊ KẸT</span>';
+        } else if (o.stage_status === 'returned') {
+          statusBadge = '<span class="status-badge status-pending" style="background:rgba(245,158,11,0.15); border-color:var(--warning)">ĐÃ TRẢ</span>';
+        } else if (o.current_stage === 9 && o.stage_status === 'completed') {
+          statusBadge = '<span class="status-badge status-sent">HOÀN THÀNH</span>';
+        } else {
+          statusBadge = `<span class="status-badge status-pending">XỬ LÝ (${o.current_stage}/9)</span>`;
+        }
+
+        return `
+          <tr class="clickable-row olv-row" data-number="${o.order_number}">
+            <td><span class="sku-badge" style="color: #818cf8;">${escapeHtml(o.order_number)}</span></td>
+            <td style="font-weight: 500">${escapeHtml(o.customer_name)}</td>
+            <td style="text-align: right; font-weight:600;" class="price-text">${fmt.format(total)}</td>
+            <td style="text-align: center">${getStageDotsHtml(o.current_stage, o.stage_status)}</td>
+            <td style="text-align: center">${statusBadge}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    const STAGE_NAMES = [
+      'Draft (Nháp)',
+      'Approved (Duyệt)',
+      'Procuring (Mua hàng)',
+      'Allocated (Giữ hàng)',
+      'Packed (Đóng gói)',
+      'Shipping (Giao hàng)',
+      'Delivered (Đã giao)',
+      'Reconciled (Đối soát)',
+      'Closed (Hoàn thành)'
+    ];
+
+    function getStageDotsHtml(currentStage, stageStatus) {
+      let html = '<div class="stage-track">';
+      for (let i = 1; i <= 9; i++) {
+        let statusClass = '';
+        let tooltip = STAGE_NAMES[i - 1];
+        
+        if (stageStatus === 'returned') {
+          if (i <= currentStage) statusClass = 'returned';
+        } else {
+          if (i < currentStage) {
+            statusClass = 'completed';
+          } else if (i === currentStage) {
+            statusClass = stageStatus === 'stuck' ? 'stuck' : 'active';
+          }
+        }
+        
+        html += `<div class="stage-dot ${statusClass}" title="${tooltip}"></div>`;
+      }
+      html += '</div>';
+      return html;
+    }
+
+    // ORDER DRAWER MANAGEMENT
+    function openOrderDrawer(order) {
+      selectedOrderNumber = order.order_number;
+      orderDrawerOverlay.classList.add('active');
+      orderDrawer.classList.add('active');
+      
+      orderInfoContent.innerHTML = `
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin-top: 1rem; display:flex; flex-direction:column; gap:0.5rem;">
+          <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted);">Mã đơn hàng:</span><strong style="color:#818cf8;">${escapeHtml(order.order_number)}</strong></div>
+          <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted);">Khách hàng:</span><strong>${escapeHtml(order.customer_name)}</strong></div>
+          <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted);">Tổng giá trị:</span><strong style="color:#fff;">${fmt.format(parseFloat(order.total_amount))}</strong></div>
+        </div>
+      `;
+
+      renderTimeline(order);
+      updateDrawerActionButtons(order);
+    }
+
+    function closeOrderDrawer() {
+      selectedOrderNumber = null;
+      orderDrawerOverlay.classList.remove('active');
+      orderDrawer.classList.remove('active');
+    }
+
+    // Bind order row click
+    olvRowsEl.addEventListener('click', (e) => {
+      const row = e.target.closest('.olv-row');
+      if (!row) return;
+      
+      const orderNumber = row.dataset.number;
+      const order = orders.find(o => o.order_number === orderNumber);
+      if (order) {
+        openOrderDrawer(order);
+      }
+    });
+
+    orderDrawerOverlay.addEventListener('click', closeOrderDrawer);
+    btnOrderDrawerClose.addEventListener('click', closeOrderDrawer);
+
+    // RENDER TIMELINE IN DRAWER
+    function renderTimeline(order) {
+      const history = order.history || [];
+      
+      let html = '';
+      for (let i = 1; i <= 9; i++) {
+        const histItem = history.find(h => h.stage === i);
+        let badgeClass = '';
+        let statusText = 'Chưa đến (Pending)';
+        let timeText = '';
+        let descText = 'Đang xếp hàng...';
+
+        if (order.stage_status === 'returned' && i <= order.current_stage) {
+          badgeClass = 'returned';
+          statusText = 'Hoàn trả';
+          if (histItem) {
+            timeText = new Date(histItem.timestamp).toLocaleTimeString('vi-VN');
+            descText = histItem.message;
+          }
+        } else {
+          if (i < order.current_stage) {
+            badgeClass = 'completed';
+            statusText = 'Đã hoàn thành';
+            if (histItem) {
+              timeText = new Date(histItem.timestamp).toLocaleTimeString('vi-VN');
+              descText = histItem.message;
+            } else {
+              descText = 'Đã tự động hoàn thành';
+            }
+          } else if (i === order.current_stage) {
+            if (order.stage_status === 'stuck') {
+              badgeClass = 'stuck';
+              statusText = 'GẶP SỰ CỐ';
+            } else if (order.current_stage === 9 && order.stage_status === 'completed') {
+              badgeClass = 'completed';
+              statusText = 'Hoàn thành (Closed)';
+            } else {
+              badgeClass = 'active';
+              statusText = 'Đang xử lý (Active)';
+            }
+            if (histItem) {
+              timeText = new Date(histItem.timestamp).toLocaleTimeString('vi-VN');
+              descText = histItem.message;
+            } else {
+              descText = 'Đang chờ xử lý chặng này...';
+            }
+          }
+        }
+
+        html += `
+          <div class="timeline-item">
+            <div class="timeline-badge ${badgeClass}"></div>
+            <div class="timeline-content">
+              <div class="timeline-header">
+                <span>Chặng ${i}: ${STAGE_NAMES[i-1]}</span>
+                <span class="timeline-time">${timeText}</span>
+              </div>
+              <div style="font-size: 0.72rem; font-weight:bold; color: ${badgeClass === 'completed' ? 'var(--success)' : (badgeClass === 'stuck' ? 'var(--danger)' : (badgeClass === 'active' ? 'var(--primary)' : 'var(--text-muted)'))}">${statusText}</div>
+              <div class="timeline-desc">${descText}</div>
+            </div>
+          </div>
+        `;
+      }
+      
+      orderTimeline.innerHTML = html;
+    }
+
+    function updateDrawerActionButtons(order) {
+      const isStuck = order.stage_status === 'stuck';
+      const isReturned = order.stage_status === 'returned';
+      const isClosed = order.current_stage === 9 && order.stage_status === 'completed';
+      
+      // Advance button: disable if stuck, returned, or closed
+      if (isStuck || isReturned || isClosed) {
+        btnOrderAdvance.disabled = true;
+        btnOrderAdvance.style.opacity = '0.4';
+        btnOrderAdvance.style.cursor = 'not-allowed';
+      } else {
+        btnOrderAdvance.disabled = false;
+        btnOrderAdvance.style.opacity = '1';
+        btnOrderAdvance.style.cursor = 'pointer';
+      }
+
+      // Stuck button label and color
+      if (isStuck) {
+        btnOrderStuck.textContent = 'Giải Quyết Sự Cố';
+        btnOrderStuck.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+        btnOrderStuck.style.color = 'var(--success)';
+      } else {
+        btnOrderStuck.textContent = 'Báo Sự Cố';
+        btnOrderStuck.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+        btnOrderStuck.style.color = 'var(--warning)';
+      }
+      
+      // Disable stuck and return if returned
+      if (isReturned) {
+        btnOrderStuck.disabled = true;
+        btnOrderStuck.style.opacity = '0.4';
+        btnOrderReturn.disabled = true;
+        btnOrderReturn.style.opacity = '0.4';
+      } else {
+        btnOrderStuck.disabled = false;
+        btnOrderStuck.style.opacity = '1';
+        btnOrderReturn.disabled = false;
+        btnOrderReturn.style.opacity = '1';
+      }
+    }
+
+    // DRAWER BUTTONS HANDLERS
+    btnOrderAdvance.addEventListener('click', async () => {
+      if (!selectedOrderNumber) return;
+      try {
+        const r = await fetch(`/api/orders/${selectedOrderNumber}/advance`, { method: 'POST' });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.error || 'Lỗi khi đẩy chặng đơn hàng');
+        
+        showToast(`Đã đẩy đơn hàng ${selectedOrderNumber} sang chặng tiếp theo.`, 'success');
+        loadOlvData();
+        loadEvents();
+        loadOutbox();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+
+    btnOrderStuck.addEventListener('click', async () => {
+      if (!selectedOrderNumber) return;
+      const order = orders.find(o => o.order_number === selectedOrderNumber);
+      if (!order) return;
+      
+      const isCurrentlyStuck = order.stage_status === 'stuck';
+      let reason = null;
+      if (!isCurrentlyStuck) {
+        reason = prompt('Nhập lý do sự cố / nghẽn đơn hàng:', 'Sai thông tin hóa đơn vận chuyển');
+        if (reason === null) return; // cancelled
+      }
+      
+      try {
+        const r = await fetch(`/api/orders/${selectedOrderNumber}/stuck`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason })
+        });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.error || 'Lỗi khi cập nhật trạng thái sự cố');
+        
+        showToast(j.is_stuck ? 'Đã kích hoạt trạng thái sự cố cho đơn hàng!' : 'Đã giải quyết xong sự cố đơn hàng!', j.is_stuck ? 'error' : 'success');
+        loadOlvData();
+        loadEvents();
+        loadOutbox();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+
+    btnOrderReturn.addEventListener('click', async () => {
+      if (!selectedOrderNumber) return;
+      const reason = prompt('Nhập lý do đổi trả hàng (D-053):', 'Sản phẩm bị móp méo khi vận chuyển');
+      if (reason === null) return; // cancelled
+      
+      try {
+        const r = await fetch(`/api/orders/${selectedOrderNumber}/return`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason })
+        });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.error || 'Lỗi khi xử lý trả hàng');
+        
+        showToast('Đã kích hoạt thành công quy trình trả hàng.', 'warning');
+        loadOlvData();
+        loadEvents();
+        loadOutbox();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+
+    // SIMULATOR BUTTON HANDLERS
+    btnCreateRandomOrder.addEventListener('click', async () => {
+      try {
+        const r = await fetch('/api/orders', { method: 'POST' });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.error || 'Lỗi tạo đơn hàng');
+        
+        showToast(`Đã tạo mới thành công đơn hàng ${j.order_number}.`, 'success');
+        loadOlvData();
+        loadEvents();
+        loadOutbox();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+
+    function toggleAutoPlay() {
+      autoPlay = !autoPlay;
+      if (autoPlay) {
+        btnAutoPlay.textContent = 'Auto-Play: Bật';
+        btnAutoPlay.className = 'btn btn-primary';
+        
+        // Start auto play loop
+        autoPlayInterval = setInterval(async () => {
+          // Find the oldest order that is active and can be advanced (not closed, not stuck, not returned)
+          const advanceable = orders.find(o => {
+            const isStuck = o.stage_status === 'stuck';
+            const isReturned = o.stage_status === 'returned';
+            const isClosed = o.current_stage === 9 && o.stage_status === 'completed';
+            return !isStuck && !isReturned && !isClosed;
+          });
+          
+          if (advanceable) {
+            console.log(`[Auto-Play] Advancing order ${advanceable.order_number}...`);
+            try {
+              const r = await fetch(`/api/orders/${advanceable.order_number}/advance`, { method: 'POST' });
+              if (r.ok) {
+                showToast(`[Auto-Play] Đẩy đơn ${advanceable.order_number} sang chặng ${advanceable.current_stage + 1}`, 'success');
+                loadOlvData();
+                loadEvents();
+                loadOutbox();
+              }
+            } catch (err) {
+              console.error('[Auto-Play] Error advancing order:', err);
+            }
+          } else {
+            // No advanceable orders left, turn off autoplay
+            toggleAutoPlay();
+            showToast('Không có đơn hàng nào đủ điều kiện đẩy tự động.', 'warning');
+          }
+        }, 3000);
+      } else {
+        btnAutoPlay.textContent = 'Auto-Play: Tắt';
+        btnAutoPlay.className = 'btn btn-secondary';
+        if (autoPlayInterval) {
+          clearInterval(autoPlayInterval);
+          autoPlayInterval = null;
+        }
+      }
+    }
+
+    btnAutoPlay.addEventListener('click', toggleAutoPlay);
 
     // Health check
     async function checkHealth() {
@@ -1631,6 +2391,7 @@
     checkHealth();
     checkFastStatus();
     loadData();
+    loadOlvData();
     loadEvents();
     loadOutbox();
     
@@ -1640,6 +2401,9 @@
     setInterval(() => {
       loadEvents();
       loadOutbox();
+      if (activeTab === 'olv') {
+        loadOlvData();
+      }
     }, 2000);
   </script>
 </body>

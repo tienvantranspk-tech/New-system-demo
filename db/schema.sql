@@ -35,3 +35,33 @@ CREATE TABLE IF NOT EXISTS outbox_events (
   last_attempt TIMESTAMPTZ,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Orders Write Model Table
+CREATE TABLE IF NOT EXISTS orders (
+  id              SERIAL PRIMARY KEY,
+  order_number    TEXT NOT NULL UNIQUE,
+  customer_name   TEXT NOT NULL,
+  total_amount    NUMERIC(12,2) NOT NULL DEFAULT 0,
+  status          TEXT NOT NULL DEFAULT 'DRAFT',
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Order Items Table
+CREATE TABLE IF NOT EXISTS order_items (
+  id              SERIAL PRIMARY KEY,
+  order_id        INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  sku             TEXT NOT NULL,
+  quantity        INTEGER NOT NULL,
+  unit_price      NUMERIC(12,2) NOT NULL
+);
+
+-- Order Lifecycle View Read Model Table
+CREATE TABLE IF NOT EXISTS order_lifecycle_view (
+  order_number    TEXT PRIMARY KEY,
+  customer_name   TEXT NOT NULL,
+  total_amount    NUMERIC(12,2) NOT NULL,
+  current_stage   INTEGER NOT NULL DEFAULT 1,
+  stage_status    TEXT NOT NULL DEFAULT 'active', -- 'active', 'completed', 'stuck', 'returned'
+  history         JSONB NOT NULL DEFAULT '[]'::jsonb,
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
