@@ -51,23 +51,45 @@
       background: var(--bg-gradient);
       color: var(--text);
       min-height: 100vh;
-      padding: 2.5rem 1.5rem;
+      margin: 0;
+      padding: 0;
       line-height: 1.5;
+      overflow: hidden;
     }
 
     .container {
-      max-width: 1320px;
-      margin: 0 auto;
+      display: flex;
+      width: 100vw;
+      height: 100vh;
+      max-width: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
     }
 
-    /* Header */
-    header {
+    .sidebar {
+      width: 280px;
+      min-width: 280px;
+      background: rgba(10, 15, 30, 0.45);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-right: 1px solid var(--border);
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2.5rem;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 1.5rem;
+      flex-direction: column;
+      padding: 2.5rem 1.25rem;
+      height: 100vh;
+      box-shadow: 4px 0 30px rgba(0, 0, 0, 0.15);
+      z-index: 100;
+    }
+
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 2.5rem 2.5rem;
+      min-width: 0;
+      height: 100vh;
+      overflow-y: auto;
     }
 
     .brand-title {
@@ -939,40 +961,51 @@
     /* Tab Navigation */
     .nav-tabs-custom {
       display: flex;
-      gap: 1.5rem;
-      margin-bottom: 2rem;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 0.25rem;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: auto;
+      border-bottom: none;
+      padding-bottom: 0;
     }
 
     .nav-tab-custom {
       background: transparent;
-      border: 0;
+      border: 1px solid transparent;
       color: var(--text-muted);
-      font-size: 1rem;
+      font-size: 0.95rem;
       font-weight: 600;
-      padding: 0.5rem 0.25rem;
+      padding: 0.75rem 1rem;
       cursor: pointer;
       position: relative;
       transition: all 0.25s ease;
       font-family: var(--font);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      width: 100%;
+      border-radius: 8px;
+      text-align: left;
     }
 
     .nav-tab-custom:hover {
+      background: rgba(255, 255, 255, 0.03);
       color: var(--text);
+      border-color: rgba(255, 255, 255, 0.05);
     }
 
     .nav-tab-custom.active {
+      background: rgba(37, 99, 235, 0.15);
       color: var(--primary);
+      border-color: rgba(37, 99, 235, 0.3);
     }
 
     .nav-tab-custom.active::after {
       content: '';
       position: absolute;
-      bottom: -5px;
       left: 0;
-      width: 100%;
-      height: 3px;
+      top: 20%;
+      width: 4px;
+      height: 60%;
       background: var(--primary);
       border-radius: 99px;
       box-shadow: 0 0 10px var(--primary-glow);
@@ -1121,24 +1154,31 @@
 <body>
   <div class="container">
     
-    <!-- Header -->
-    <header>
-      <div class="brand-title">
-        WeNew ERP
-        <span class="tag">Kho hàng &amp; Outbox</span>
+    <!-- Left Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header" style="margin-bottom: 2rem;">
+        <div class="brand-title" style="margin-bottom: 0.5rem; font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; background: linear-gradient(135deg, #fff 40%, #a5f3fc 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+          WeNew ERP
+        </div>
+        <span class="tag" style="display: inline-block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; background: rgba(37, 99, 235, 0.15); color: var(--primary); padding: 0.2rem 0.6rem; border-radius: 6px; border: 1px solid rgba(37, 99, 235, 0.3);">Kho hàng &amp; Outbox</span>
       </div>
-      <div class="status-container">
+
+      <!-- Tab Navigation -->
+      <div class="nav-tabs-custom">
+        <button class="nav-tab-custom active" data-tab="warehouse">📦 Kho hàng &amp; Outbox</button>
+        <button class="nav-tab-custom" data-tab="olv">📋 Command Center (OLV)</button>
+        <button class="nav-tab-custom" data-tab="recon">💸 Đối soát Dòng tiền (Recon)</button>
+      </div>
+
+      <!-- Status Indicator at bottom -->
+      <div class="status-container" style="margin-top: auto; display: flex; align-items: center; gap: 0.5rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); padding: 0.4rem 0.8rem; border-radius: 99px; font-size: 0.8rem; font-weight: 500; justify-content: center; width: 100%;">
         <div id="statusPulse" class="pulse-dot"></div>
         <span id="statusText">Đang kết nối...</span>
       </div>
-    </header>
+    </aside>
 
-    <!-- Tab Navigation -->
-    <div class="nav-tabs-custom">
-      <button class="nav-tab-custom active" data-tab="warehouse">📦 Kho hàng &amp; Outbox</button>
-      <button class="nav-tab-custom" data-tab="olv">📋 Command Center (OLV)</button>
-      <button class="nav-tab-custom" data-tab="recon">💸 Đối soát Dòng tiền (Recon)</button>
-    </div>
+    <!-- Main Content Area -->
+    <main class="main-content">
 
     <!-- Warehouse KPI Grid -->
     <div class="kpi-grid" id="warehouseKpiGrid">
@@ -1452,7 +1492,7 @@
       </div>
 
     </div>
-
+    </main>
   </div>
 
   <!-- Slide-in Drawer Modal -->
