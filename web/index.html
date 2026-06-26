@@ -3,98 +3,1082 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ERP Sample — Kho hàng</title>
+  <title>WeNew ERP — Quản lý Kho hàng</title>
+  
+  <!-- Import Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
   <style>
-    :root { color-scheme: light dark; }
-    * { box-sizing: border-box; }
-    body { font-family: system-ui, "Segoe UI", Roboto, sans-serif; max-width: 880px; margin: 2rem auto; padding: 0 1rem; }
-    h1 { font-size: 1.4rem; }
-    .muted { color: #888; font-size: .9rem; }
-    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-    th, td { text-align: left; padding: .55rem .5rem; border-bottom: 1px solid #8884; }
-    th { font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; color: #888; }
-    form { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: 1.5rem; align-items: end; }
-    label { display: flex; flex-direction: column; font-size: .8rem; gap: .25rem; }
-    input { padding: .45rem .5rem; border: 1px solid #8886; border-radius: 6px; background: transparent; color: inherit; }
-    button { padding: .5rem .9rem; border: 0; border-radius: 6px; background: #2563eb; color: #fff; cursor: pointer; }
-    button.del { background: transparent; color: #ef4444; border: 1px solid #ef444466; padding: .25rem .5rem; font-size: .8rem; }
-    .pill { display:inline-block; padding:.15rem .5rem; border-radius:999px; background:#22c55e22; color:#16a34a; font-size:.75rem; }
-    #err { color:#ef4444; font-size:.85rem; min-height:1.2em; }
+    :root {
+      --bg: #0b0f19;
+      --bg-gradient: radial-gradient(1200px 600px at 80% -10%, rgba(37, 99, 235, 0.08), transparent 60%),
+                     radial-gradient(900px 500px at 0% 0%, rgba(6, 182, 212, 0.06), transparent 55%),
+                     #0b0f19;
+      --panel: rgba(17, 24, 39, 0.7);
+      --panel-hover: rgba(23, 37, 84, 0.3);
+      --border: rgba(255, 255, 255, 0.07);
+      --border-focus: rgba(37, 99, 235, 0.5);
+      
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --primary-glow: rgba(37, 99, 235, 0.2);
+      
+      --success: #10b981;
+      --success-glow: rgba(16, 185, 129, 0.15);
+      --warning: #f59e0b;
+      --warning-glow: rgba(245, 158, 11, 0.15);
+      --danger: #ef4444;
+      --danger-glow: rgba(239, 68, 68, 0.15);
+      
+      --font: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg-gradient);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2.5rem 1.5rem;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2.5rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1.5rem;
+    }
+
+    .brand-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #fff 40%, #a5f3fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-title span.tag {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: rgba(37, 99, 235, 0.15);
+      color: var(--primary);
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+      border: 1px solid rgba(37, 99, 235, 0.3);
+      -webkit-text-fill-color: initial;
+    }
+
+    .status-container {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.8rem;
+      border-radius: 99px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 0 var(--success-glow);
+      animation: pulse 1.6s infinite;
+    }
+
+    .pulse-dot.error {
+      background: var(--danger);
+      box-shadow: 0 0 0 0 var(--danger-glow);
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      }
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+      }
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+      }
+    }
+
+    /* KPI Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .kpi-card {
+      background: var(--panel);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .kpi-title {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .kpi-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+
+    .kpi-footer {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    /* Theme colors for metrics */
+    .kpi-card.value .kpi-value { color: #38bdf8; }
+    .kpi-card.stock .kpi-value { color: #a7f3d0; }
+    .kpi-card.alerts.active {
+      border-color: rgba(239, 68, 68, 0.3);
+      background: linear-gradient(135deg, rgba(17,24,39,0.7) 80%, rgba(239,68,68,0.05) 100%);
+    }
+    .kpi-card.alerts.active .kpi-value { color: var(--danger); }
+    .kpi-card.alerts.active .kpi-title { color: #fca5a5; }
+
+    /* Control Bar */
+    .control-bar {
+      background: var(--panel);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .search-filter-group {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      flex: 1;
+    }
+
+    .search-wrapper {
+      position: relative;
+      min-width: 260px;
+      flex: 1;
+      max-width: 400px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 0.55rem 1rem 0.55rem 2.2rem;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 0.875rem;
+      transition: all 0.2s ease;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: rgba(255, 255, 255, 0.05);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 0.8rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 14px;
+      height: 14px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 0.35rem;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 0.25rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .filter-tab {
+      padding: 0.35rem 0.8rem;
+      border: 0;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      font-weight: 500;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: var(--font);
+    }
+
+    .filter-tab:hover {
+      color: var(--text);
+    }
+
+    .filter-tab.active {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 0.55rem 1.1rem;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      font-family: var(--font);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      box-shadow: 0 4px 12px var(--primary-glow);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .btn-danger-outline {
+      background: transparent;
+      border-color: rgba(239, 68, 68, 0.3);
+      color: var(--danger);
+      padding: 0.35rem 0.7rem;
+      font-size: 0.8rem;
+      border-radius: 6px;
+    }
+
+    .btn-danger-outline:hover {
+      background: rgba(239, 68, 68, 0.08);
+      border-color: var(--danger);
+    }
+
+    /* Table Panel */
+    .table-panel {
+      background: var(--panel);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .table-responsive {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      padding: 1rem 1.25rem;
+      background: rgba(0, 0, 0, 0.15);
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+      vertical-align: middle;
+      transition: background 0.15s ease;
+    }
+
+    tr.clickable-row {
+      cursor: pointer;
+    }
+
+    tr.clickable-row:hover td {
+      background: var(--panel-hover);
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .sku-badge {
+      font-family: monospace;
+      font-size: 0.8rem;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      color: #38bdf8;
+    }
+
+    .qty-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-weight: 600;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .status-dot.in-stock { background: var(--success); }
+    .status-dot.low-stock { background: var(--warning); }
+    .status-dot.out-of-stock { background: var(--danger); }
+
+    .price-text {
+      font-family: var(--font);
+      font-weight: 500;
+    }
+
+    .total-val-text {
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .empty-state {
+      padding: 4rem 2rem;
+      text-align: center;
+      color: var(--text-muted);
+      display: none;
+    }
+
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 1rem;
+      opacity: 0.3;
+    }
+
+    /* Slide-in Drawer Modal */
+    .drawer-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .drawer-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 100%;
+      max-width: 440px;
+      height: 100%;
+      background: #0f172a;
+      border-left: 1px solid var(--border);
+      box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+      z-index: 101;
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .drawer.active {
+      transform: translateX(0);
+    }
+
+    .drawer-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .drawer-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .drawer-close {
+      background: transparent;
+      border: 0;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      transition: background 0.2s;
+    }
+
+    .drawer-close:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+    }
+
+    .drawer-body {
+      padding: 1.5rem;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 0.65rem 0.8rem;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: rgba(255, 255, 255, 0.06);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    .drawer-footer {
+      padding: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 0.75rem;
+      background: rgba(0, 0, 0, 0.15);
+    }
+
+    .drawer-footer .btn {
+      flex: 1;
+      justify-content: center;
+    }
+
+    /* Toast System */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 9999;
+    }
+
+    .toast {
+      background: #1e293b;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.85rem 1.25rem;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      min-width: 280px;
+      max-width: 380px;
+      transform: translateY(20px);
+      opacity: 0;
+      animation: toastIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      border-left: 4px solid var(--primary);
+    }
+
+    .toast.success { border-left-color: var(--success); }
+    .toast.error { border-left-color: var(--danger); }
+    .toast.warning { border-left-color: var(--warning); }
+
+    @keyframes toastIn {
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .toast.fade-out {
+      animation: toastOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    @keyframes toastOut {
+      to {
+        transform: translateY(-20px);
+        opacity: 0;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1>ERP Sample — Quản lý kho <span id="status" class="pill">…</span></h1>
-  <p class="muted">Node + Express API → PostgreSQL (chạy 100% local, 0&#8363;). Đây là bản mẫu để kiểm chứng full-stack.</p>
+  <div class="container">
+    
+    <!-- Header -->
+    <header>
+      <div class="brand-title">
+        WeNew ERP
+        <span class="tag">Kho hàng</span>
+      </div>
+      <div class="status-container">
+        <div id="statusPulse" class="pulse-dot"></div>
+        <span id="statusText">Đang kết nối...</span>
+      </div>
+    </header>
 
-  <table>
-    <thead>
-      <tr><th>ID</th><th>SKU</th><th>Tên hàng</th><th>SL</th><th>Đơn giá</th><th></th></tr>
-    </thead>
-    <tbody id="rows"></tbody>
-  </table>
+    <!-- KPI Grid -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-title">Tổng số mặt hàng (SKU)</div>
+        <div class="kpi-value" id="kpiSku">0</div>
+        <div class="kpi-footer">
+          <span>Danh mục mặt hàng độc bản</span>
+        </div>
+      </div>
+      <div class="kpi-card stock">
+        <div class="kpi-title">Tổng số tồn kho</div>
+        <div class="kpi-value" id="kpiTotalQty">0</div>
+        <div class="kpi-footer">
+          <span>Số lượng sản phẩm trong kho</span>
+        </div>
+      </div>
+      <div class="kpi-card value">
+        <div class="kpi-title">Tổng giá trị tồn kho</div>
+        <div class="kpi-value" id="kpiTotalValue">0 ₫</div>
+        <div class="kpi-footer">
+          <span>Định giá theo đơn giá hiện tại</span>
+        </div>
+      </div>
+      <div id="kpiAlertsCard" class="kpi-card alerts">
+        <div class="kpi-title">Cảnh báo tồn kho thấp</div>
+        <div class="kpi-value" id="kpiAlerts">0</div>
+        <div class="kpi-footer">
+          <span>Sản phẩm có số lượng &lt; 50 cái</span>
+        </div>
+      </div>
+    </div>
 
-  <form id="addForm">
-    <label>SKU<input name="sku" required placeholder="SKU-004" /></label>
-    <label>Tên hàng<input name="name" required placeholder="Thùng nhựa 50L" /></label>
-    <label>Số lượng<input name="quantity" type="number" value="0" min="0" /></label>
-    <label>Đơn giá<input name="unit_price" type="number" value="0" min="0" step="0.01" /></label>
-    <button type="submit">Thêm</button>
-  </form>
-  <p id="err"></p>
+    <!-- Control Bar -->
+    <div class="control-bar">
+      <div class="search-filter-group">
+        <!-- Search -->
+        <div class="search-wrapper">
+          <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.602 10.602Z" />
+          </svg>
+          <input type="text" id="searchInput" class="search-input" placeholder="Tìm kiếm theo SKU, tên sản phẩm..." />
+        </div>
 
+        <!-- Filtering tabs -->
+        <div class="filter-tabs">
+          <button class="filter-tab active" data-filter="all">Tất cả</button>
+          <button class="filter-tab" data-filter="instock">Còn hàng</button>
+          <button class="filter-tab" data-filter="lowstock">Sắp hết (&lt;50)</button>
+          <button class="filter-tab" data-filter="outofstock">Hết hàng</button>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <button class="btn btn-primary" id="btnAddItem">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 16px; height: 16px;">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+        Thêm sản phẩm
+      </button>
+    </div>
+
+    <!-- Table Panel -->
+    <div class="table-panel">
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 80px;">ID</th>
+              <th style="width: 150px;">SKU</th>
+              <th>Tên hàng</th>
+              <th style="text-align: right; width: 140px;">Số lượng</th>
+              <th style="text-align: right; width: 160px;">Đơn giá</th>
+              <th style="text-align: right; width: 180px;">Thành tiền</th>
+              <th style="text-align: center; width: 100px;">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="rows">
+            <!-- Row items dynamically injected here -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state" id="emptyState">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+        </svg>
+        <p>Không tìm thấy sản phẩm nào phù hợp</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Slide-in Drawer Modal -->
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+  <div class="drawer" id="itemDrawer">
+    <div class="drawer-header">
+      <div class="drawer-title" id="drawerTitle">Thêm sản phẩm mới</div>
+      <button class="drawer-close" id="btnDrawerClose">&times;</button>
+    </div>
+    <form id="itemForm">
+      <input type="hidden" id="itemId" name="id" />
+      <div class="drawer-body">
+        <div class="form-group">
+          <label for="inputSku">Mã SKU</label>
+          <input type="text" id="inputSku" name="sku" required class="form-control" placeholder="Ví dụ: SKU-999" />
+        </div>
+        <div class="form-group">
+          <label for="inputName">Tên mặt hàng</label>
+          <input type="text" id="inputName" name="name" required class="form-control" placeholder="Ví dụ: Thùng nhựa Danpla 50L" />
+        </div>
+        <div class="form-group">
+          <label for="inputQuantity">Số lượng tồn kho</label>
+          <input type="number" id="inputQuantity" name="quantity" required min="0" class="form-control" value="0" />
+        </div>
+        <div class="form-group">
+          <label for="inputUnitPrice">Đơn giá (₫)</label>
+          <input type="number" id="inputUnitPrice" name="unit_price" required min="0" step="0.01" class="form-control" value="0" />
+        </div>
+      </div>
+      <div class="drawer-footer">
+        <button type="button" class="btn btn-secondary" id="btnDrawerCancel">Hủy</button>
+        <button type="submit" class="btn btn-primary">Lưu lại</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- JS Implementation -->
   <script>
-    const fmt = new Intl.NumberFormat('vi-VN');
+    const fmt = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
+    const numberFmt = new Intl.NumberFormat('vi-VN');
+    
+    // Elements
     const rowsEl = document.getElementById('rows');
-    const errEl = document.getElementById('err');
-    const statusEl = document.getElementById('status');
+    const emptyStateEl = document.getElementById('emptyState');
+    const statusPulseEl = document.getElementById('statusPulse');
+    const statusTextEl = document.getElementById('statusText');
+    const searchInput = document.getElementById('searchInput');
+    const filterTabs = document.querySelectorAll('.filter-tab');
+    
+    // KPI Elements
+    const kpiSkuEl = document.getElementById('kpiSku');
+    const kpiTotalQtyEl = document.getElementById('kpiTotalQty');
+    const kpiTotalValueEl = document.getElementById('kpiTotalValue');
+    const kpiAlertsEl = document.getElementById('kpiAlerts');
+    const kpiAlertsCard = document.getElementById('kpiAlertsCard');
+    
+    // Drawer Elements
+    const drawerOverlay = document.getElementById('drawerOverlay');
+    const itemDrawer = document.getElementById('itemDrawer');
+    const itemForm = document.getElementById('itemForm');
+    const drawerTitle = document.getElementById('drawerTitle');
+    const btnAddItem = document.getElementById('btnAddItem');
+    const btnDrawerClose = document.getElementById('btnDrawerClose');
+    const btnDrawerCancel = document.getElementById('btnDrawerCancel');
+    
+    // Form Inputs
+    const inputId = document.getElementById('itemId');
+    const inputSku = document.getElementById('inputSku');
+    const inputName = document.getElementById('inputName');
+    const inputQuantity = document.getElementById('inputQuantity');
+    const inputUnitPrice = document.getElementById('inputUnitPrice');
+    
+    // State
+    let items = [];
+    let currentFilter = 'all';
+    let searchQuery = '';
 
-    async function health() {
+    // Toasts System
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      
+      let icon = '';
+      if (type === 'success') {
+        icon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:18px;height:18px;color:var(--success)"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>`;
+      } else if (type === 'error') {
+        icon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:18px;height:18px;color:var(--danger)"><path stroke-linecap="round" stroke-linejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>`;
+      } else {
+        icon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:18px;height:18px;color:var(--warning)"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-1.5h.008v.008H12v-.008Z" /></svg>`;
+      }
+
+      toast.innerHTML = `${icon} <span>${message}</span>`;
+      container.appendChild(toast);
+      
+      // Auto remove
+      setTimeout(() => {
+        toast.classList.add('fade-out');
+        toast.addEventListener('animationend', () => {
+          toast.remove();
+        });
+      }, 3500);
+    }
+
+    // Health check
+    async function checkHealth() {
       try {
         const r = await fetch('/health');
         const j = await r.json();
-        statusEl.textContent = j.db === 'up' ? 'DB: online' : 'DB: lỗi';
-        statusEl.style.background = j.db === 'up' ? '#22c55e22' : '#ef444422';
-        statusEl.style.color = j.db === 'up' ? '#16a34a' : '#ef4444';
-      } catch { statusEl.textContent = 'API: offline'; }
+        if (j.db === 'up') {
+          statusPulseEl.className = 'pulse-dot';
+          statusTextEl.textContent = 'Hệ thống: Online';
+        } else {
+          statusPulseEl.className = 'pulse-dot error';
+          statusTextEl.textContent = 'Hệ thống: Lỗi DB';
+          showToast('Kết nối Database đang bị gián đoạn!', 'error');
+        }
+      } catch {
+        statusPulseEl.className = 'pulse-dot error';
+        statusTextEl.textContent = 'Hệ thống: Offline';
+      }
     }
 
-    async function load() {
-      errEl.textContent = '';
-      const r = await fetch('/api/items');
-      const items = await r.json();
-      rowsEl.innerHTML = items.map(it => `
-        <tr>
-          <td>${it.id}</td>
-          <td>${it.sku}</td>
-          <td>${it.name}</td>
-          <td>${fmt.format(it.quantity)}</td>
-          <td>${fmt.format(it.unit_price)} &#8363;</td>
-          <td><button class="del" data-id="${it.id}">Xóa</button></td>
-        </tr>`).join('');
+    // Calculate & update KPIs
+    function updateKPIs() {
+      const skuCount = items.length;
+      const totalQty = items.reduce((sum, item) => sum + parseInt(item.quantity || 0), 0);
+      const totalValue = items.reduce((sum, item) => sum + (parseInt(item.quantity || 0) * parseFloat(item.unit_price || 0)), 0);
+      const lowStockCount = items.filter(item => parseInt(item.quantity || 0) < 50).length;
+
+      kpiSkuEl.textContent = numberFmt.format(skuCount);
+      kpiTotalQtyEl.textContent = numberFmt.format(totalQty);
+      kpiTotalValueEl.textContent = fmt.format(totalValue);
+      kpiAlertsEl.textContent = numberFmt.format(lowStockCount);
+
+      if (lowStockCount > 0) {
+        kpiAlertsCard.classList.add('active');
+      } else {
+        kpiAlertsCard.classList.remove('active');
+      }
     }
 
-    document.getElementById('addForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      errEl.textContent = '';
-      const data = Object.fromEntries(new FormData(e.target).entries());
-      const r = await fetch('/api/items', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(data),
+    // Load & Render items
+    async function loadData() {
+      try {
+        const r = await fetch('/api/items');
+        if (!r.ok) throw new Error('Không thể tải dữ liệu');
+        items = await r.json();
+        
+        updateKPIs();
+        renderTable();
+      } catch (err) {
+        showToast(err.message || 'Lỗi kết nối API', 'error');
+      }
+    }
+
+    // Render Table based on filter and search query
+    function renderTable() {
+      const filtered = items.filter(item => {
+        // Search filter
+        const matchQuery = item.sku.toLowerCase().includes(searchQuery) || 
+                           item.name.toLowerCase().includes(searchQuery);
+        
+        if (!matchQuery) return false;
+
+        // Stock status filter
+        const qty = parseInt(item.quantity || 0);
+        if (currentFilter === 'instock') return qty > 0;
+        if (currentFilter === 'lowstock') return qty > 0 && qty < 50;
+        if (currentFilter === 'outofstock') return qty === 0;
+        return true;
       });
-      if (!r.ok) { errEl.textContent = (await r.json()).error || 'Lỗi'; return; }
-      e.target.reset();
-      load();
+
+      if (filtered.length === 0) {
+        rowsEl.innerHTML = '';
+        emptyStateEl.style.display = 'block';
+        return;
+      }
+
+      emptyStateEl.style.display = 'none';
+      rowsEl.innerHTML = filtered.map(it => {
+        const qty = parseInt(it.quantity || 0);
+        const unitPrice = parseFloat(it.unit_price || 0);
+        const totalPrice = qty * unitPrice;
+        
+        let stockStatusClass = 'in-stock';
+        if (qty === 0) stockStatusClass = 'out-of-stock';
+        else if (qty < 50) stockStatusClass = 'low-stock';
+
+        return `
+          <tr class="clickable-row" data-id="${it.id}">
+            <td><span style="color: var(--text-muted)">#</span>${it.id}</td>
+            <td><span class="sku-badge">${escapeHtml(it.sku)}</span></td>
+            <td style="font-weight: 500">${escapeHtml(it.name)}</td>
+            <td style="text-align: right">
+              <span class="qty-badge">
+                <span class="status-dot ${stockStatusClass}"></span>
+                ${numberFmt.format(qty)}
+              </span>
+            </td>
+            <td style="text-align: right" class="price-text">${fmt.format(unitPrice)}</td>
+            <td style="text-align: right" class="total-val-text">${fmt.format(totalPrice)}</td>
+            <td style="text-align: center" onclick="event.stopPropagation()">
+              <button class="btn btn-danger-outline btn-delete" data-id="${it.id}">Xóa</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Helper to escape HTML to prevent XSS
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+    }
+
+    // Drawer handling
+    function openDrawer(mode = 'add', itemData = null) {
+      drawerOverlay.classList.add('active');
+      itemDrawer.classList.add('active');
+      
+      if (mode === 'edit' && itemData) {
+        drawerTitle.textContent = 'Cập nhật thông tin sản phẩm';
+        inputId.value = itemData.id;
+        inputSku.value = itemData.sku;
+        inputName.value = itemData.name;
+        inputQuantity.value = itemData.quantity;
+        inputUnitPrice.value = itemData.unit_price;
+      } else {
+        drawerTitle.textContent = 'Thêm sản phẩm mới';
+        itemForm.reset();
+        inputId.value = '';
+        inputQuantity.value = '0';
+        inputUnitPrice.value = '0';
+      }
+    }
+
+    function closeDrawer() {
+      drawerOverlay.classList.remove('active');
+      itemDrawer.classList.remove('active');
+      itemForm.reset();
+    }
+
+    // Event Listeners
+    btnAddItem.addEventListener('click', () => openDrawer('add'));
+    btnDrawerClose.addEventListener('click', closeDrawer);
+    btnDrawerCancel.addEventListener('click', closeDrawer);
+    drawerOverlay.addEventListener('click', closeDrawer);
+
+    // Click on row to edit
+    rowsEl.addEventListener('click', (e) => {
+      const row = e.target.closest('.clickable-row');
+      if (!row) return;
+      
+      const id = row.dataset.id;
+      const selectedItem = items.find(it => String(it.id) === String(id));
+      if (selectedItem) {
+        openDrawer('edit', selectedItem);
+      }
     });
 
+    // Delete item
     rowsEl.addEventListener('click', async (e) => {
-      if (!e.target.classList.contains('del')) return;
-      await fetch('/api/items/' + e.target.dataset.id, { method: 'DELETE' });
-      load();
+      if (!e.target.classList.contains('btn-delete')) return;
+      const id = e.target.dataset.id;
+      
+      if (confirm('Bạn có chắc chắn muốn xóa mặt hàng này khỏi kho?')) {
+        try {
+          const r = await fetch(`/api/items/${id}`, { method: 'DELETE' });
+          if (!r.ok) throw new Error('Không thể xóa mặt hàng');
+          
+          showToast('Đã xóa mặt hàng thành công', 'success');
+          loadData();
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      }
     });
 
-    health();
-    load();
+    // Submit form (Add / Edit)
+    itemForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const id = inputId.value;
+      const data = {
+        sku: inputSku.value.trim(),
+        name: inputName.value.trim(),
+        quantity: parseInt(inputQuantity.value) || 0,
+        unit_price: parseFloat(inputUnitPrice.value) || 0
+      };
+
+      if (!data.sku || !data.name) {
+        showToast('Mã SKU và tên mặt hàng không được để trống', 'warning');
+        return;
+      }
+
+      const isEdit = !!id;
+      const url = isEdit ? `/api/items/${id}` : '/api/items';
+      const method = isEdit ? 'PUT' : 'POST';
+
+      try {
+        const r = await fetch(url, {
+          method: method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        if (r.status === 409) {
+          throw new Error(`Mã SKU "${data.sku}" đã tồn tại trong hệ thống!`);
+        }
+        if (!r.ok) {
+          const errRes = await r.json().catch(() => ({}));
+          throw new Error(errRes.error || 'Lỗi xử lý yêu cầu');
+        }
+
+        showToast(isEdit ? 'Cập nhật sản phẩm thành công' : 'Thêm sản phẩm mới thành công', 'success');
+        closeDrawer();
+        loadData();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+
+    // Search input handler
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value.toLowerCase().trim();
+      renderTable();
+    });
+
+    // Filter tabs click handlers
+    filterTabs.forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        filterTabs.forEach(t => t.classList.remove('active'));
+        e.target.classList.add('active');
+        currentFilter = e.target.dataset.filter;
+        renderTable();
+      });
+    });
+
+    // Init
+    checkHealth();
+    loadData();
+    
+    // Periodically check health every 15 seconds
+    setInterval(checkHealth, 15000);
   </script>
 </body>
 </html>
