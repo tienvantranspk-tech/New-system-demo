@@ -1,0 +1,27 @@
+{
+  "name": "erp-sample",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local-first ERP sample (Node API + Postgres + web) — runs 100% local at 0 VND",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "db:migrate": "node scripts/migrate.mjs",
+    "pg:start": "powershell -ExecutionPolicy Bypass -File scripts/pg-start.ps1",
+    "pg:stop": "powershell -ExecutionPolicy Bypass -File scripts/pg-stop.ps1"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "pg": "^8.12.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.5.0",
+    "@types/pg": "^8.11.6",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0"
+  }
+}

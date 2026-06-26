@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ERP Sample — Kho hàng</title>
+  <style>
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, "Segoe UI", Roboto, sans-serif; max-width: 880px; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.4rem; }
+    .muted { color: #888; font-size: .9rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { text-align: left; padding: .55rem .5rem; border-bottom: 1px solid #8884; }
+    th { font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; color: #888; }
+    form { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: 1.5rem; align-items: end; }
+    label { display: flex; flex-direction: column; font-size: .8rem; gap: .25rem; }
+    input { padding: .45rem .5rem; border: 1px solid #8886; border-radius: 6px; background: transparent; color: inherit; }
+    button { padding: .5rem .9rem; border: 0; border-radius: 6px; background: #2563eb; color: #fff; cursor: pointer; }
+    button.del { background: transparent; color: #ef4444; border: 1px solid #ef444466; padding: .25rem .5rem; font-size: .8rem; }
+    .pill { display:inline-block; padding:.15rem .5rem; border-radius:999px; background:#22c55e22; color:#16a34a; font-size:.75rem; }
+    #err { color:#ef4444; font-size:.85rem; min-height:1.2em; }
+  </style>
+</head>
+<body>
+  <h1>ERP Sample — Quản lý kho <span id="status" class="pill">…</span></h1>
+  <p class="muted">Node + Express API → PostgreSQL (chạy 100% local, 0&#8363;). Đây là bản mẫu để kiểm chứng full-stack.</p>
+
+  <table>
+    <thead>
+      <tr><th>ID</th><th>SKU</th><th>Tên hàng</th><th>SL</th><th>Đơn giá</th><th></th></tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+  <form id="addForm">
+    <label>SKU<input name="sku" required placeholder="SKU-004" /></label>
+    <label>Tên hàng<input name="name" required placeholder="Thùng nhựa 50L" /></label>
+    <label>Số lượng<input name="quantity" type="number" value="0" min="0" /></label>
+    <label>Đơn giá<input name="unit_price" type="number" value="0" min="0" step="0.01" /></label>
+    <button type="submit">Thêm</button>
+  </form>
+  <p id="err"></p>
+
+  <script>
+    const fmt = new Intl.NumberFormat('vi-VN');
+    const rowsEl = document.getElementById('rows');
+    const errEl = document.getElementById('err');
+    const statusEl = document.getElementById('status');
+
+    async function health() {
+      try {
+        const r = await fetch('/health');
+        const j = await r.json();
+        statusEl.textContent = j.db === 'up' ? 'DB: online' : 'DB: lỗi';
+        statusEl.style.background = j.db === 'up' ? '#22c55e22' : '#ef444422';
+        statusEl.style.color = j.db === 'up' ? '#16a34a' : '#ef4444';
+      } catch { statusEl.textContent = 'API: offline'; }
+    }
+
+    async function load() {
+      errEl.textContent = '';
+      const r = await fetch('/api/items');
+      const items = await r.json();
+      rowsEl.innerHTML = items.map(it => `
+        <tr>
+          <td>${it.id}</td>
+          <td>${it.sku}</td>
+          <td>${it.name}</td>
+          <td>${fmt.format(it.quantity)}</td>
+          <td>${fmt.format(it.unit_price)} &#8363;</td>
+          <td><button class="del" data-id="${it.id}">Xóa</button></td>
+        </tr>`).join('');
+    }
+
+    document.getElementById('addForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errEl.textContent = '';
+      const data = Object.fromEntries(new FormData(e.target).entries());
+      const r = await fetch('/api/items', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!r.ok) { errEl.textContent = (await r.json()).error || 'Lỗi'; return; }
+      e.target.reset();
+      load();
+    });
+
+    rowsEl.addEventListener('click', async (e) => {
+      if (!e.target.classList.contains('del')) return;
+      await fetch('/api/items/' + e.target.dataset.id, { method: 'DELETE' });
+      load();
+    });
+
+    health();
+    load();
+  </script>
+</body>
+</html>
