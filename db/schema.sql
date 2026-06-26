@@ -23,3 +23,15 @@ CREATE TABLE IF NOT EXISTS audit_events (
   payload      JSONB NOT NULL,
   published_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Transactional Outbox Events log for FAST integration sync
+CREATE TABLE IF NOT EXISTS outbox_events (
+  id           SERIAL PRIMARY KEY,
+  event_id     TEXT NOT NULL UNIQUE,
+  event_type   TEXT NOT NULL,
+  payload      JSONB NOT NULL,
+  status       TEXT NOT NULL DEFAULT 'PENDING',
+  attempts     INTEGER NOT NULL DEFAULT 0,
+  last_attempt TIMESTAMPTZ,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
