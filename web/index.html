@@ -1471,7 +1471,7 @@
             </td>
             <td style="text-align: right" class="price-text">${fmt.format(unitPrice)}</td>
             <td style="text-align: right" class="total-val-text">${fmt.format(totalPrice)}</td>
-            <td style="text-align: center" onclick="event.stopPropagation()">
+            <td style="text-align: center">
               <button class="btn btn-danger-outline btn-delete" data-id="${it.id}">Xóa</button>
             </td>
           </tr>
@@ -1524,6 +1524,9 @@
 
     // Click on row to edit
     rowsEl.addEventListener('click', (e) => {
+      // Bỏ qua nếu click vào nút Xóa
+      if (e.target.classList.contains('btn-delete')) return;
+      
       const row = e.target.closest('.clickable-row');
       if (!row) return;
       
