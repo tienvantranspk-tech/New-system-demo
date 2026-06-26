@@ -1136,7 +1136,8 @@
     <!-- Tab Navigation -->
     <div class="nav-tabs-custom">
       <button class="nav-tab-custom active" data-tab="warehouse">📦 Kho hàng &amp; Outbox</button>
-      <button class="nav-tab-custom" data-tab="olv">💰 Command Center (OLV)</button>
+      <button class="nav-tab-custom" data-tab="olv">📋 Command Center (OLV)</button>
+      <button class="nav-tab-custom" data-tab="recon">💸 Đối soát Dòng tiền (Recon)</button>
     </div>
 
     <!-- Warehouse KPI Grid -->
@@ -1192,6 +1193,30 @@
         <div class="kpi-title">Đơn gặp sự cố</div>
         <div class="kpi-value" id="kpiStuckOrders">0</div>
         <div class="kpi-footer"><span>Đơn ở trạng thái Kẹt (Stuck)</span></div>
+      </div>
+    </div>
+
+    <!-- Recon KPI Grid (hidden by default) -->
+    <div class="kpi-grid" id="reconKpiGrid" style="display: none;">
+      <div class="kpi-card">
+        <div class="kpi-title">Tổng thu ngân hàng</div>
+        <div class="kpi-value" id="kpiTotalBankDeposits" style="color: #38bdf8;">0 ₫</div>
+        <div class="kpi-footer"><span>Tổng dòng tiền ghi nhận</span></div>
+      </div>
+      <div class="kpi-card stock">
+        <div class="kpi-title">Công nợ phải thu (AR)</div>
+        <div class="kpi-value" id="kpiOutstandingAr" style="color: #f59e0b;">0 ₫</div>
+        <div class="kpi-footer"><span>Đơn hàng chưa thanh toán</span></div>
+      </div>
+      <div class="kpi-card value">
+        <div class="kpi-title">Đã đối soát (Matched)</div>
+        <div class="kpi-value" id="kpiMatchedDeposits" style="color: var(--success);">0 ₫</div>
+        <div class="kpi-footer"><span>Đã khớp &amp; gạch nợ thành công</span></div>
+      </div>
+      <div class="kpi-card alerts" id="kpiUnmatchedDepositsCard">
+        <div class="kpi-title">Giao dịch chờ xử lý</div>
+        <div class="kpi-value" id="kpiUnmatchedDeposits">0</div>
+        <div class="kpi-footer"><span>Ngoại lệ hoặc chờ duyệt</span></div>
       </div>
     </div>
 
@@ -1305,6 +1330,86 @@
             </svg>
             <p>Chưa có đơn hàng nào được tạo</p>
           </div>
+        </div>
+      </div>
+
+      <!-- Recon Pane (hidden by default) -->
+      <div id="reconPane" style="display: none; min-width: 0;">
+        <!-- Control Bar for Recon -->
+        <div class="control-bar" style="margin-bottom: 1.5rem; background: rgba(17, 24, 39, 0.7); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.25rem;">
+          <div class="search-filter-group" style="justify-content: space-between; width: 100%; align-items: center;">
+            <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+              <button class="btn btn-primary" id="btnMockPerfectMatch" style="background:#10b981;">
+                🟢 Khách CK Khớp 100%
+              </button>
+              <button class="btn btn-secondary" id="btnMockFuzzyMatch" style="border-color:rgba(245,158,11,0.4); color:var(--warning);">
+                🟡 CK Không Ghi Mã Đơn (AI)
+              </button>
+              <button class="btn btn-secondary" id="btnMockUnmatched" style="border-color:rgba(239,68,68,0.4); color:var(--danger);">
+                🔴 Giao dịch Ngoại Lệ
+              </button>
+            </div>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Giả lập Webhook nhận tiền từ ngân hàng</span>
+          </div>
+        </div>
+
+        <!-- Recon Split Row: AR on Left, Bank TXs on Right -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+          
+          <!-- AR Panel -->
+          <div class="content-panel">
+            <div class="panel-header-custom" style="background: rgba(0,0,0,0.15); padding: 1rem 1.25rem;">
+              <div class="panel-title-custom" style="color: #f59e0b; font-size: 0.8rem;">
+                📋 Công nợ phải thu (Outstanding AR)
+              </div>
+            </div>
+            <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Mã Đơn</th>
+                    <th>Khách Hàng</th>
+                    <th style="text-align: right;">Số Tiền</th>
+                    <th style="text-align: center;">Chặng</th>
+                  </tr>
+                </thead>
+                <tbody id="reconArRows">
+                  <!-- Outstanding ARs dynamically injected -->
+                </tbody>
+              </table>
+            </div>
+            <div class="empty-state" id="reconArEmptyState" style="display: block; padding: 3rem 1rem;">
+              <p>Không có công nợ AR nào cần thanh toán</p>
+            </div>
+          </div>
+
+          <!-- Bank Transactions Panel -->
+          <div class="content-panel">
+            <div class="panel-header-custom" style="background: rgba(0,0,0,0.15); padding: 1rem 1.25rem;">
+              <div class="panel-title-custom" style="color: #38bdf8; font-size: 0.8rem;">
+                💸 Giao dịch Ngân hàng (Bank Log)
+              </div>
+            </div>
+            <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Ngân Hàng / Ref</th>
+                    <th style="text-align: right;">Số Tiền</th>
+                    <th>Nội Dung CK</th>
+                    <th style="text-align: center;">Trạng Thái</th>
+                  </tr>
+                </thead>
+                <tbody id="reconTxRows">
+                  <!-- Bank transactions dynamically injected -->
+                </tbody>
+              </table>
+            </div>
+            <div class="empty-state" id="reconTxEmptyState" style="display: block; padding: 3rem 1rem;">
+              <p>Chưa ghi nhận giao dịch ngân hàng nào</p>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -1459,9 +1564,11 @@
     const navTabs = document.querySelectorAll('.nav-tab-custom');
     const warehouseKpiGrid = document.getElementById('warehouseKpiGrid');
     const olvKpiGrid = document.getElementById('olvKpiGrid');
+    const reconKpiGrid = document.getElementById('reconKpiGrid');
     const warehouseControlBar = document.getElementById('warehouseControlBar');
     const warehouseTablePanel = document.getElementById('warehouseTablePanel');
     const olvPane = document.getElementById('olvPane');
+    const reconPane = document.getElementById('reconPane');
 
     // OLV View Elements
     const olvRowsEl = document.getElementById('olvRows');
@@ -1485,6 +1592,24 @@
     const btnOrderReturn = document.getElementById('btnOrderReturn');
     const btnOrderStuck = document.getElementById('btnOrderStuck');
     const btnOrderAdvance = document.getElementById('btnOrderAdvance');
+
+    // Recon View Elements
+    const reconArRowsEl = document.getElementById('reconArRows');
+    const reconArEmptyStateEl = document.getElementById('reconArEmptyState');
+    const reconTxRowsEl = document.getElementById('reconTxRows');
+    const reconTxEmptyStateEl = document.getElementById('reconTxEmptyState');
+    
+    // Recon Buttons
+    const btnMockPerfectMatch = document.getElementById('btnMockPerfectMatch');
+    const btnMockFuzzyMatch = document.getElementById('btnMockFuzzyMatch');
+    const btnMockUnmatched = document.getElementById('btnMockUnmatched');
+
+    // Recon KPI Elements
+    const kpiTotalBankDepositsEl = document.getElementById('kpiTotalBankDeposits');
+    const kpiOutstandingArEl = document.getElementById('kpiOutstandingAr');
+    const kpiMatchedDepositsEl = document.getElementById('kpiMatchedDeposits');
+    const kpiUnmatchedDepositsEl = document.getElementById('kpiUnmatchedDeposits');
+    const kpiUnmatchedDepositsCard = document.getElementById('kpiUnmatchedDepositsCard');
     
     // State
     let items = [];
@@ -1493,6 +1618,8 @@
     let activeTab = 'warehouse';
     let autoPlay = false;
     let autoPlayInterval = null;
+    let bankTransactions = [];
+    let outstandingArs = [];
     let selectedOrderNumber = null;
     let outboxEvents = [];
     let currentFilter = 'all';
@@ -1531,6 +1658,11 @@
     function switchTab(tabName) {
       activeTab = tabName;
       
+      // Stop autoplay if leaving OLV
+      if (tabName !== 'olv' && autoPlay) {
+        toggleAutoPlay();
+      }
+
       // Update active nav button
       navTabs.forEach(t => {
         if (t.dataset.tab === tabName) {
@@ -1540,29 +1672,30 @@
         }
       });
       
-      // Switch view grids/panels
+      // Hide all panes
+      warehouseKpiGrid.style.display = 'none';
+      warehouseControlBar.style.display = 'none';
+      warehouseTablePanel.style.display = 'none';
+      
+      olvKpiGrid.style.display = 'none';
+      olvPane.style.display = 'none';
+      
+      reconKpiGrid.style.display = 'none';
+      reconPane.style.display = 'none';
+
+      // Show active pane
       if (tabName === 'olv') {
-        warehouseKpiGrid.style.display = 'none';
-        warehouseControlBar.style.display = 'none';
-        warehouseTablePanel.style.display = 'none';
-        
         olvKpiGrid.style.display = 'grid';
         olvPane.style.display = 'block';
-        
         loadOlvData();
+      } else if (tabName === 'recon') {
+        reconKpiGrid.style.display = 'grid';
+        reconPane.style.display = 'block';
+        loadReconData();
       } else {
-        olvKpiGrid.style.display = 'none';
-        olvPane.style.display = 'none';
-        
         warehouseKpiGrid.style.display = 'grid';
         warehouseControlBar.style.display = 'flex';
         warehouseTablePanel.style.display = 'block';
-        
-        // Stop autoplay if leaving OLV
-        if (autoPlay) {
-          toggleAutoPlay();
-        }
-        
         loadData();
       }
     }
@@ -1570,6 +1703,193 @@
     // Bind tab clicks
     navTabs.forEach(tab => {
       tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+    });
+
+    // LOAD & RENDER RECON DATA
+    async function loadReconData() {
+      try {
+        const arRes = await fetch('/api/reconciliation/outstanding-ar');
+        outstandingArs = await arRes.json();
+        
+        const txRes = await fetch('/api/reconciliation/transactions');
+        bankTransactions = await txRes.json();
+        
+        renderReconKPIs();
+        renderReconArTable();
+        renderReconTxTable();
+      } catch (err) {
+        console.error('Lỗi tải dữ liệu đối soát:', err);
+      }
+    }
+
+    function renderReconKPIs() {
+      const totalDeposited = bankTransactions.reduce((sum, tx) => sum + Number(tx.amount), 0);
+      const totalAr = outstandingArs.reduce((sum, o) => sum + Number(o.total_amount), 0);
+      const matchedAmount = bankTransactions
+        .filter(tx => tx.status === 'MATCHED')
+        .reduce((sum, tx) => sum + Number(tx.amount), 0);
+      const unmatchedCount = bankTransactions.filter(tx => tx.status !== 'MATCHED').length;
+
+      kpiTotalBankDepositsEl.textContent = fmt.format(totalDeposited);
+      kpiOutstandingArEl.textContent = fmt.format(totalAr);
+      kpiMatchedDepositsEl.textContent = fmt.format(matchedAmount);
+      kpiUnmatchedDepositsEl.textContent = numberFmt.format(unmatchedCount);
+
+      if (unmatchedCount > 0) {
+        kpiUnmatchedDepositsCard.classList.add('active');
+      } else {
+        kpiUnmatchedDepositsCard.classList.remove('active');
+      }
+    }
+
+    function renderReconArTable() {
+      if (outstandingArs.length === 0) {
+        reconArRowsEl.innerHTML = '';
+        reconArEmptyStateEl.style.display = 'block';
+        return;
+      }
+      
+      reconArEmptyStateEl.style.display = 'none';
+      reconArRowsEl.innerHTML = outstandingArs.map(o => {
+        return `
+          <tr>
+            <td><span class="sku-badge" style="color: #818cf8;">${escapeHtml(o.order_number)}</span></td>
+            <td style="font-weight: 500">${escapeHtml(o.customer_name)}</td>
+            <td style="text-align: right; font-weight:600;" class="price-text">${fmt.format(parseFloat(o.total_amount))}</td>
+            <td style="text-align: center"><span class="status-badge status-pending" style="background:rgba(255,255,255,0.05);">${o.current_stage}/9</span></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderReconTxTable() {
+      if (bankTransactions.length === 0) {
+        reconTxRowsEl.innerHTML = '';
+        reconTxEmptyStateEl.style.display = 'block';
+        return;
+      }
+      
+      reconTxEmptyStateEl.style.display = 'none';
+      reconTxRowsEl.innerHTML = bankTransactions.map(tx => {
+        let statusBadge = '';
+        if (tx.status === 'MATCHED') {
+          statusBadge = `<span class="status-badge status-sent" style="font-size:0.65rem;">🟢 KHỚP (${tx.matched_order_number})</span>`;
+        } else if (tx.status === 'PENDING_APPROVAL') {
+          statusBadge = `
+            <div style="display:flex; flex-direction:column; gap:0.25rem; align-items:center;">
+              <span class="status-badge status-pending" style="font-size:0.65rem;">🟡 CHỜ DUYỆT (AI)</span>
+              <button class="btn btn-primary btn-approve-match" data-id="${tx.id}" style="padding:0.2rem 0.4rem; font-size:0.65rem; border-radius:4px;">Duyệt khớp</button>
+            </div>
+          `;
+        } else {
+          statusBadge = '<span class="status-badge status-failed" style="font-size:0.65rem;">🔴 NGOẠI LỆ</span>';
+        }
+
+        const dateStr = new Date(tx.transaction_time).toLocaleTimeString('vi-VN');
+        const badgeTitle = tx.match_type === 'FUZZY' ? `title="${escapeHtml(tx.suggested_reason)}"` : '';
+
+        return `
+          <tr ${badgeTitle} style="${tx.status === 'PENDING_APPROVAL' ? 'background: rgba(245,158,11,0.02);' : ''}">
+            <td>
+              <div style="font-weight:600; color:#fff;">${escapeHtml(tx.bank_name)}</div>
+              <div style="font-size:0.65rem; color:var(--text-muted);">${escapeHtml(tx.bank_reference.slice(0, 11))}...</div>
+              <div style="font-size:0.6rem; color:var(--text-muted);">${dateStr}</div>
+            </td>
+            <td style="text-align: right; font-weight:700; color:#38bdf8;">+${fmt.format(parseFloat(tx.amount))}</td>
+            <td>
+              <div style="font-size:0.8rem;">${escapeHtml(tx.description)}</div>
+              ${tx.match_type === 'FUZZY' ? `<div style="font-size:0.65rem; color:var(--warning); margin-top:0.15rem; font-style:italic;">🤖 Gợi ý: ${escapeHtml(tx.suggested_reason)}</div>` : ''}
+            </td>
+            <td style="text-align: center; vertical-align:middle;">${statusBadge}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // MOCK BANK DEPOSITS
+    async function mockDeposit(bankName, amount, description) {
+      try {
+        const r = await fetch('/api/reconciliation/mock-deposit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bank_name: bankName, amount, description })
+        });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.error || 'Lỗi giả lập nhận tiền');
+        
+        showToast(`Nhận giao dịch ${j.bank_reference} từ ${j.bank_name}: +${Number(j.amount).toLocaleString('vi-VN')} đ. Đang chạy đối soát...`, 'success');
+        
+        setTimeout(() => {
+          loadReconData();
+          loadEvents();
+          loadOutbox();
+        }, 500);
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    // Bind perfect mock
+    btnMockPerfectMatch.addEventListener('click', () => {
+      if (outstandingArs.length === 0) {
+        showToast('Không có đơn hàng công nợ nào đang chờ để đối soát.', 'warning');
+        return;
+      }
+      const order = outstandingArs[0];
+      const banks = ['Vietcombank', 'Techcombank', 'ACB'];
+      const bank = banks[Math.floor(Math.random() * banks.length)];
+      const amount = Number(order.total_amount);
+      const desc = `${order.order_number} CK thanh toan don hang`;
+      
+      mockDeposit(bank, amount, desc);
+    });
+
+    // Bind fuzzy mock
+    btnMockFuzzyMatch.addEventListener('click', () => {
+      if (outstandingArs.length === 0) {
+        showToast('Không có đơn hàng công nợ nào đang chờ để đối soát.', 'warning');
+        return;
+      }
+      const order = outstandingArs[0];
+      const banks = ['Vietcombank', 'Techcombank', 'ACB'];
+      const bank = banks[Math.floor(Math.random() * banks.length)];
+      const amount = Number(order.total_amount);
+      const desc = `Khach hang ${order.customer_name} chuyen khoan`;
+      
+      mockDeposit(bank, amount, desc);
+    });
+
+    // Bind unmatched mock
+    btnMockUnmatched.addEventListener('click', () => {
+      const banks = ['Vietcombank', 'Techcombank', 'ACB'];
+      const bank = banks[Math.floor(Math.random() * banks.length)];
+      const amount = Math.floor(Math.random() * 500000) + 10000;
+      const desc = 'Chuyen tien mua qua tang ban be';
+      
+      mockDeposit(bank, amount, desc);
+    });
+
+    // Bind approve button clicks on transaction rows
+    reconTxRowsEl.addEventListener('click', async (e) => {
+      if (!e.target.classList.contains('btn-approve-match')) return;
+      const txId = e.target.dataset.id;
+      
+      try {
+        const r = await fetch('/api/reconciliation/approve-match', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: txId })
+        });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.error || 'Lỗi phê duyệt đối soát');
+        
+        showToast(`Đã duyệt khớp đơn ${j.order_number} thành công.`, 'success');
+        loadReconData();
+        loadEvents();
+        loadOutbox();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
     });
 
     // LOAD & RENDER OLV DATA
@@ -2401,6 +2721,9 @@
       loadOutbox();
       if (activeTab === 'olv') {
         loadOlvData();
+      }
+      if (activeTab === 'recon') {
+        loadReconData();
       }
     }, 2000);
   </script>

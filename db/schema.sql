@@ -65,3 +65,17 @@ CREATE TABLE IF NOT EXISTS order_lifecycle_view (
   history         JSONB NOT NULL DEFAULT '[]'::jsonb,
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Bank Transactions Table
+CREATE TABLE IF NOT EXISTS bank_transactions (
+  id                    SERIAL PRIMARY KEY,
+  bank_reference        TEXT NOT NULL UNIQUE,
+  bank_name             TEXT NOT NULL,
+  amount                NUMERIC(12,2) NOT NULL,
+  description           TEXT NOT NULL,
+  status                TEXT NOT NULL DEFAULT 'UNMATCHED', -- 'MATCHED', 'PENDING_APPROVAL', 'UNMATCHED'
+  matched_order_number  TEXT,
+  match_type            TEXT, -- 'PERFECT', 'FUZZY', 'NONE'
+  suggested_reason      TEXT,
+  transaction_time      TIMESTAMPTZ NOT NULL DEFAULT now()
+);

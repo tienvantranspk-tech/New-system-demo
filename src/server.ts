@@ -6,6 +6,7 @@ import { pool } from './db';
 import { eventBus } from './eventBus';
 import { OutboxWorker } from './outboxWorker';
 import { initProjector } from './projector';
+import { initReconciliationEngine } from './reconciliationEngine';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -435,6 +436,119 @@ app.post('/api/orders/:order_number/return', async (req, res) => {
   }
 });
 
+// --- CASH RECONCILIATION APIS ---
+
+// 1) Get all bank transactions
+app.get('/api/reconciliation/transactions', async (_req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM bank_transactions ORDER BY transaction_time DESC LIMIT 20');
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// 2) Get all outstanding orders (current_stage < 8)
+app.get('/api/reconciliation/outstanding-ar', async (_req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT order_number, customer_name, total_amount, current_stage, stage_status 
+       FROM order_lifecycle_view 
+       WHERE current_stage < 8 OR (current_stage = 8 AND stage_status != 'completed')
+       ORDER BY updated_at DESC`
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// 3) Mock a deposit from uploader (creates a bank transaction and publishes bank.transaction.received)
+app.post('/api/reconciliation/mock-deposit', async (req, res) => {
+  const { bank_name, amount, description } = req.body ?? {};
+  
+  if (!bank_name || !amount || !description) {
+    return res.status(400).json({ error: 'bank_name, amount, and description are required' });
+  }
+
+  try {
+    // Generate a unique bank reference: VCB-104928392
+    const bank_reference = `${bank_name.toUpperCase().slice(0, 3)}-${Math.floor(Math.random() * 900000000) + 100000000}`;
+    
+    const { rows } = await pool.query(
+      `INSERT INTO bank_transactions (bank_reference, bank_name, amount, description, status)
+       VALUES ($1, $2, $3, $4, 'UNMATCHED') RETURNING *`,
+      [bank_reference, bank_name, Number(amount), description]
+    );
+    const tx = rows[0];
+
+    // Publish bank transaction received event to trigger Reconciliation Engine
+    eventBus.publish('bank.transaction.received', tx);
+
+    res.status(201).json(tx);
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// 4) Approve fuzzy match manually
+app.post('/api/reconciliation/approve-match', async (req, res) => {
+  const { id } = req.body ?? {};
+  if (!id) {
+    return res.status(400).json({ error: 'Transaction id is required' });
+  }
+
+  const client = await pool.connect();
+  try {
+    // Get transaction details
+    const txRes = await client.query('SELECT * FROM bank_transactions WHERE id = $1', [id]);
+    if (txRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Transaction not found' });
+    }
+    const tx = txRes.rows[0];
+
+    if (tx.status !== 'PENDING_APPROVAL' || !tx.matched_order_number) {
+      return res.status(400).json({ error: 'Transaction is not in PENDING_APPROVAL status or has no matched order' });
+    }
+
+    const orderNumber = tx.matched_order_number;
+
+    await client.query('BEGIN');
+
+    // Update transaction to matched
+    await client.query(
+      `UPDATE bank_transactions 
+       SET status = 'MATCHED' 
+       WHERE id = $1`,
+      [id]
+    );
+
+    // Update orders status in write model
+    await client.query(
+      `UPDATE orders 
+       SET status = 'RECONCILED' 
+       WHERE order_number = $1`,
+      [orderNumber]
+    );
+
+    await client.query('COMMIT');
+
+    // Publish payment.reconciled event
+    eventBus.publish('payment.reconciled', {
+      order_number: orderNumber,
+      payment_amount: Number(tx.amount),
+      transaction_id: tx.bank_reference
+    });
+
+    res.json({ success: true, order_number: orderNumber });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: String(err) });
+  } finally {
+    client.release();
+  }
+});
+
 const port = Number(process.env.PORT) || 8080;
 app.listen(port, () => {
   console.log(`ERP sample running at http://localhost:${port}`);
@@ -445,4 +559,7 @@ app.listen(port, () => {
 
   // Start order lifecycle projector
   initProjector();
+
+  // Start cash reconciliation engine
+  initReconciliationEngine();
 });
