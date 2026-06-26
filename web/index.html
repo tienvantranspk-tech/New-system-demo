@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WeNew ERP — Quản lý Kho hàng</title>
+  <title>WeNew ERP — Quản lý Kho hàng & Pub/Sub Monitor</title>
   
   <!-- Import Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,6 +34,8 @@
       --warning-glow: rgba(245, 158, 11, 0.15);
       --danger: #ef4444;
       --danger-glow: rgba(239, 68, 68, 0.15);
+      --accent-cyan: #06b6d4;
+      --cyan-glow: rgba(6, 180, 212, 0.15);
       
       --font: 'Inter', system-ui, -apple-system, sans-serif;
     }
@@ -54,7 +56,7 @@
     }
 
     .container {
-      max-width: 1200px;
+      max-width: 1280px;
       margin: 0 auto;
     }
 
@@ -288,57 +290,22 @@
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
-    /* Buttons */
-    .btn {
-      padding: 0.55rem 1.1rem;
-      border: 1px solid transparent;
-      border-radius: 8px;
-      font-size: 0.875rem;
-      font-weight: 600;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      font-family: var(--font);
+    /* Main Dashboard Layout Split */
+    .dashboard-body {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 1.5rem;
+      align-items: start;
     }
 
-    .btn-primary {
-      background: var(--primary);
-      color: #fff;
+    @media (max-width: 1024px) {
+      .dashboard-body {
+        grid-template-columns: 1fr;
+      }
     }
 
-    .btn-primary:hover {
-      background: var(--primary-hover);
-      box-shadow: 0 4px 12px var(--primary-glow);
-    }
-
-    .btn-secondary {
-      background: rgba(255, 255, 255, 0.05);
-      border-color: var(--border);
-      color: var(--text);
-    }
-
-    .btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.08);
-    }
-
-    .btn-danger-outline {
-      background: transparent;
-      border-color: rgba(239, 68, 68, 0.3);
-      color: var(--danger);
-      padding: 0.35rem 0.7rem;
-      font-size: 0.8rem;
-      border-radius: 6px;
-    }
-
-    .btn-danger-outline:hover {
-      background: rgba(239, 68, 68, 0.08);
-      border-color: var(--danger);
-    }
-
-    /* Table Panel */
-    .table-panel {
+    /* Panels */
+    .content-panel {
       background: var(--panel);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
@@ -348,6 +315,7 @@
       box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
     }
 
+    /* Left panel overrides */
     .table-responsive {
       overflow-x: auto;
     }
@@ -438,6 +406,228 @@
       height: 48px;
       margin-bottom: 1rem;
       opacity: 0.3;
+    }
+
+    /* Right panel: Event Bus Stream Monitor */
+    .event-panel-header {
+      padding: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.15);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+
+    .event-panel-header.flash-cyan {
+      background: rgba(6, 182, 212, 0.2);
+      box-shadow: inset 0 0 15px rgba(6, 182, 212, 0.3);
+    }
+
+    .event-bus-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent-cyan);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .pulse-dot-cyan {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-cyan);
+      box-shadow: 0 0 0 0 var(--cyan-glow);
+      animation: pulse-cyan 1.6s infinite;
+    }
+
+    @keyframes pulse-cyan {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.7);
+      }
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 8px rgba(6, 182, 212, 0);
+      }
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(6, 182, 212, 0);
+      }
+    }
+
+    .event-stream-container {
+      padding: 1.25rem;
+      max-height: 520px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .event-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.8rem;
+      font-size: 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      transition: all 0.25s ease;
+    }
+
+    .event-card.new-flash {
+      animation: eventFlash 1.2s ease-out;
+    }
+
+    @keyframes eventFlash {
+      0% {
+        background: rgba(6, 182, 212, 0.15);
+        border-color: var(--accent-cyan);
+        transform: scale(1.02);
+      }
+      100% {
+        background: rgba(255, 255, 255, 0.02);
+        border-color: var(--border);
+        transform: scale(1);
+      }
+    }
+
+    .event-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .event-type-badge {
+      font-family: monospace;
+      font-weight: 700;
+      font-size: 0.7rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      text-transform: lowercase;
+    }
+
+    .badge-created {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--success);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+    .badge-updated {
+      background: rgba(245, 158, 11, 0.1);
+      color: var(--warning);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+    .badge-deleted {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .event-time {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .event-id-text {
+      font-family: monospace;
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      display: block;
+      margin-bottom: 0.2rem;
+    }
+
+    /* Collapsible JSON payload */
+    .event-payload-details {
+      margin-top: 0.3rem;
+      border-top: 1px dashed var(--border);
+      padding-top: 0.3rem;
+    }
+
+    .event-payload-summary {
+      cursor: pointer;
+      color: var(--accent-cyan);
+      font-weight: 600;
+      font-size: 0.75rem;
+      outline: none;
+      user-select: none;
+    }
+
+    .event-payload-summary:hover {
+      text-decoration: underline;
+    }
+
+    .event-payload-pre {
+      font-family: monospace;
+      font-size: 0.7rem;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 0.5rem;
+      border-radius: 4px;
+      margin-top: 0.4rem;
+      color: #a7f3d0;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+
+    .event-empty {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 0.55rem 1.1rem;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      font-family: var(--font);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      box-shadow: 0 4px 12px var(--primary-glow);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .btn-danger-outline {
+      background: transparent;
+      border-color: rgba(239, 68, 68, 0.3);
+      color: var(--danger);
+      padding: 0.35rem 0.7rem;
+      font-size: 0.8rem;
+      border-radius: 6px;
+    }
+
+    .btn-danger-outline:hover {
+      background: rgba(239, 68, 68, 0.08);
+      border-color: var(--danger);
     }
 
     /* Slide-in Drawer Modal */
@@ -628,7 +818,7 @@
     <header>
       <div class="brand-title">
         WeNew ERP
-        <span class="tag">Kho hàng</span>
+        <span class="tag">Kho hàng &amp; Pub/Sub</span>
       </div>
       <div class="status-container">
         <div id="statusPulse" class="pulse-dot"></div>
@@ -697,34 +887,54 @@
       </button>
     </div>
 
-    <!-- Table Panel -->
-    <div class="table-panel">
-      <div class="table-responsive">
-        <table>
-          <thead>
-            <tr>
-              <th style="width: 80px;">ID</th>
-              <th style="width: 150px;">SKU</th>
-              <th>Tên hàng</th>
-              <th style="text-align: right; width: 140px;">Số lượng</th>
-              <th style="text-align: right; width: 160px;">Đơn giá</th>
-              <th style="text-align: right; width: 180px;">Thành tiền</th>
-              <th style="text-align: center; width: 100px;">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody id="rows">
-            <!-- Row items dynamically injected here -->
-          </tbody>
-        </table>
+    <!-- Split Layout: Inventory on Left, Event monitor on Right -->
+    <div class="dashboard-body">
+      
+      <!-- Left side: Inventory Table -->
+      <div class="content-panel">
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 70px;">ID</th>
+                <th style="width: 120px;">SKU</th>
+                <th>Tên hàng</th>
+                <th style="text-align: right; width: 120px;">Số lượng</th>
+                <th style="text-align: right; width: 130px;">Đơn giá</th>
+                <th style="text-align: right; width: 150px;">Thành tiền</th>
+                <th style="text-align: center; width: 90px;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="rows">
+              <!-- Row items dynamically injected here -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" id="emptyState">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
+          </svg>
+          <p>Không tìm thấy sản phẩm nào phù hợp</p>
+        </div>
       </div>
 
-      <!-- Empty State -->
-      <div class="empty-state" id="emptyState">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z" />
-        </svg>
-        <p>Không tìm thấy sản phẩm nào phù hợp</p>
+      <!-- Right side: Event Bus Stream Monitor -->
+      <div class="content-panel">
+        <div class="event-panel-header" id="eventBusHeader">
+          <div class="event-bus-title">
+            <div class="pulse-dot-cyan"></div>
+            Pub/Sub Event Bus Monitor
+          </div>
+          <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 500;">Bất đồng bộ (100ms delay)</span>
+        </div>
+        <div class="event-stream-container" id="eventList">
+          <!-- Event cards will be dynamically injected here -->
+          <div class="event-empty">Chưa có sự kiện nào được xuất bản</div>
+        </div>
       </div>
+
     </div>
 
   </div>
@@ -778,6 +988,8 @@
     const statusTextEl = document.getElementById('statusText');
     const searchInput = document.getElementById('searchInput');
     const filterTabs = document.querySelectorAll('.filter-tab');
+    const eventListEl = document.getElementById('eventList');
+    const eventBusHeader = document.getElementById('eventBusHeader');
     
     // KPI Elements
     const kpiSkuEl = document.getElementById('kpiSku');
@@ -804,8 +1016,10 @@
     
     // State
     let items = [];
+    let events = [];
     let currentFilter = 'all';
     let searchQuery = '';
+    let lastSeenEventId = null;
 
     // Toasts System
     function showToast(message, type = 'success') {
@@ -845,7 +1059,7 @@
         } else {
           statusPulseEl.className = 'pulse-dot error';
           statusTextEl.textContent = 'Hệ thống: Lỗi DB';
-          showToast('Kết nối Database đang bị gián đoạn!', 'error');
+          showToast('Kết nối Database bị gián đoạn!', 'error');
         }
       } catch {
         statusPulseEl.className = 'pulse-dot error';
@@ -884,6 +1098,82 @@
       } catch (err) {
         showToast(err.message || 'Lỗi kết nối API', 'error');
       }
+    }
+
+    // Load & Render Pub/Sub Events
+    async function loadEvents() {
+      try {
+        const r = await fetch('/api/events');
+        if (!r.ok) throw new Error('Không thể tải sự kiện');
+        events = await r.json();
+        
+        renderEvents();
+      } catch (err) {
+        console.error('Lỗi tải sự kiện:', err);
+      }
+    }
+
+    // Render Events List
+    function renderEvents() {
+      if (events.length === 0) {
+        eventListEl.innerHTML = '<div class="event-empty">Chưa có sự kiện nào được xuất bản</div>';
+        return;
+      }
+
+      // Check if there is a new event to flash the header
+      const latestEvent = events[0];
+      let isNew = false;
+      if (lastSeenEventId && latestEvent.event_id !== lastSeenEventId) {
+        isNew = true;
+        flashEventBusHeader();
+      }
+      
+      eventListEl.innerHTML = events.map((ev, index) => {
+        const publishedTime = new Date(ev.published_at).toLocaleTimeString('vi-VN');
+        const eventClass = isNew && index === 0 ? 'event-card new-flash' : 'event-card';
+        
+        let typeBadgeClass = 'badge-created';
+        let actionWord = 'được tạo';
+        if (ev.event_type.endsWith('.updated')) {
+          typeBadgeClass = 'badge-updated';
+          actionWord = 'cập nhật';
+        } else if (ev.event_type.endsWith('.deleted')) {
+          typeBadgeClass = 'badge-deleted';
+          actionWord = 'bị xóa';
+        }
+
+        const payloadStr = JSON.stringify(ev.payload, null, 2);
+
+        return `
+          <div class="${eventClass}" data-id="${ev.event_id}">
+            <div class="event-card-header">
+              <span class="event-type-badge ${typeBadgeClass}">${ev.event_type}</span>
+              <span class="event-time">${publishedTime}</span>
+            </div>
+            <span class="event-id-text">ID: ${ev.event_id.slice(0, 8)}...</span>
+            <div style="font-size: 0.8rem; margin: 0.2rem 0;">
+              Sản phẩm <strong>${escapeHtml(ev.payload.sku)}</strong> ${actionWord}.
+            </div>
+            <div class="event-payload-details">
+              <details>
+                <summary class="event-payload-summary">Xem chi tiết Payload</summary>
+                <pre class="event-payload-pre">${escapeHtml(payloadStr)}</pre>
+              </details>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Keep track of the latest event
+      lastSeenEventId = latestEvent.event_id;
+    }
+
+    // Flash Event Bus Header animation on new event
+    function flashEventBusHeader() {
+      eventBusHeader.classList.add('flash-cyan');
+      setTimeout(() => {
+        eventBusHeader.classList.remove('flash-cyan');
+      }, 1000);
     }
 
     // Render Table based on filter and search query
@@ -1005,8 +1295,13 @@
           const r = await fetch(`/api/items/${id}`, { method: 'DELETE' });
           if (!r.ok) throw new Error('Không thể xóa mặt hàng');
           
-          showToast('Đã xóa mặt hàng thành công', 'success');
-          loadData();
+          showToast('Đã gửi yêu cầu xóa lên hệ thống...', 'warning');
+          
+          // Wait briefly to allow async Pub/Sub event to persist before reloading
+          setTimeout(() => {
+            loadData();
+            loadEvents();
+          }, 300);
         } catch (err) {
           showToast(err.message, 'error');
         }
@@ -1049,9 +1344,14 @@
           throw new Error(errRes.error || 'Lỗi xử lý yêu cầu');
         }
 
-        showToast(isEdit ? 'Cập nhật sản phẩm thành công' : 'Thêm sản phẩm mới thành công', 'success');
+        showToast(isEdit ? 'Đang cập nhật qua Pub/Sub...' : 'Đang xử lý yêu cầu thêm qua Pub/Sub...', 'warning');
         closeDrawer();
-        loadData();
+        
+        // Wait 300ms to allow async Pub/Sub execution to complete and write to DB
+        setTimeout(() => {
+          loadData();
+          loadEvents();
+        }, 300);
       } catch (err) {
         showToast(err.message, 'error');
       }
@@ -1076,9 +1376,11 @@
     // Init
     checkHealth();
     loadData();
+    loadEvents();
     
-    // Periodically check health every 15 seconds
+    // Periodically poll health (15s) and new events (2.5s)
     setInterval(checkHealth, 15000);
+    setInterval(loadEvents, 2500);
   </script>
 </body>
 </html>

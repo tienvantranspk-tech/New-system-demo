@@ -14,3 +14,12 @@ INSERT INTO items (sku, name, quantity, unit_price) VALUES
   ('SKU-002', 'Bang keo trong 5cm', 480, 8000),
   ('SKU-003', 'Pallet go 1m2', 35, 250000)
 ON CONFLICT (sku) DO NOTHING;
+
+-- Audit events log for Pub/Sub tracking
+CREATE TABLE IF NOT EXISTS audit_events (
+  id           SERIAL PRIMARY KEY,
+  event_id     TEXT NOT NULL UNIQUE,
+  event_type   TEXT NOT NULL,
+  payload      JSONB NOT NULL,
+  published_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

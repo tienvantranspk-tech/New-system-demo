@@ -2,6 +2,7 @@ import express from 'express';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { pool } from './db';
+import { eventBus } from './eventBus';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -26,6 +27,16 @@ app.get('/api/items', async (_req, res) => {
   res.json(rows);
 });
 
+// List events (Pub/Sub monitor stream)
+app.get('/api/events', async (_req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM audit_events ORDER BY id DESC LIMIT 15');
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
 // Create item
 app.post('/api/items', async (req, res) => {
   const { sku, name, quantity, unit_price } = req.body ?? {};
@@ -38,6 +49,10 @@ app.post('/api/items', async (req, res) => {
        VALUES ($1, $2, $3, $4) RETURNING *`,
       [sku, name, Number(quantity) || 0, Number(unit_price) || 0],
     );
+    
+    // Publish inventory.item.created event via Pub/Sub
+    eventBus.publish('inventory.item.created', rows[0]);
+    
     res.status(201).json(rows[0]);
   } catch (err: any) {
     if (err?.code === '23505') {
@@ -49,9 +64,17 @@ app.post('/api/items', async (req, res) => {
 
 // Delete item
 app.delete('/api/items/:id', async (req, res) => {
-  const { rowCount } = await pool.query('DELETE FROM items WHERE id = $1', [req.params.id]);
-  if (!rowCount) return res.status(404).json({ error: 'not found' });
-  res.status(204).end();
+  try {
+    const { rows, rowCount } = await pool.query('DELETE FROM items WHERE id = $1 RETURNING *', [req.params.id]);
+    if (!rowCount) return res.status(404).json({ error: 'not found' });
+    
+    // Publish inventory.item.deleted event via Pub/Sub
+    eventBus.publish('inventory.item.deleted', rows[0]);
+    
+    res.status(204).end();
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
 });
 
 // Update item
@@ -69,6 +92,10 @@ app.put('/api/items/:id', async (req, res) => {
       [sku, name, Number(quantity) || 0, Number(unit_price) || 0, id],
     );
     if (!rowCount) return res.status(404).json({ error: 'not found' });
+    
+    // Publish inventory.item.updated event via Pub/Sub
+    eventBus.publish('inventory.item.updated', rows[0]);
+    
     res.json(rows[0]);
   } catch (err: any) {
     if (err?.code === '23505') {
