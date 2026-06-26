@@ -1168,6 +1168,7 @@
         <button class="nav-tab-custom active" data-tab="warehouse">📦 Kho hàng &amp; Outbox</button>
         <button class="nav-tab-custom" data-tab="olv">📋 Command Center (OLV)</button>
         <button class="nav-tab-custom" data-tab="recon">💸 Đối soát Dòng tiền (Recon)</button>
+        <button class="nav-tab-custom" data-tab="analytics">📊 Báo cáo Analytics (Lightdash)</button>
       </div>
 
       <!-- Status Indicator at bottom -->
@@ -1257,6 +1258,30 @@
         <div class="kpi-title">Giao dịch chờ xử lý</div>
         <div class="kpi-value" id="kpiUnmatchedDeposits">0</div>
         <div class="kpi-footer"><span>Ngoại lệ hoặc chờ duyệt</span></div>
+      </div>
+    </div>
+
+    <!-- Analytics KPI Grid (hidden by default) -->
+    <div class="kpi-grid" id="analyticsKpiGrid" style="display: none;">
+      <div class="kpi-card">
+        <div class="kpi-title">Tổng doanh số BQ</div>
+        <div class="kpi-value" id="kpiAnalyticsRevenue" style="color: #38bdf8;">0 ₫</div>
+        <div class="kpi-footer"><span>Doanh số đã chốt trên BigQuery</span></div>
+      </div>
+      <div class="kpi-card stock">
+        <div class="kpi-title">Dự phòng công nợ</div>
+        <div class="kpi-value" id="kpiAnalyticsOutstandingAr" style="color: #f59e0b;">0 ₫</div>
+        <div class="kpi-footer"><span>Công nợ AR đang chờ thanh toán</span></div>
+      </div>
+      <div class="kpi-card value">
+        <div class="kpi-title">Tỷ lệ đối soát</div>
+        <div class="kpi-value" id="kpiAnalyticsReconRate" style="color: var(--success);">0%</div>
+        <div class="kpi-footer"><span>Cash flow match rate</span></div>
+      </div>
+      <div class="kpi-card value" style="border-color: rgba(99, 102, 241, 0.4);">
+        <div class="kpi-title">CDC Logs (Datastream)</div>
+        <div class="kpi-value" id="kpiAnalyticsCdcLogs" style="color: #a5b4fc;">0 / 0</div>
+        <div class="kpi-footer"><span>Raw BQ (Orders / Bank Txs)</span></div>
       </div>
     </div>
 
@@ -1453,6 +1478,127 @@
         </div>
       </div>
 
+      <!-- Analytics Pane (hidden by default) -->
+      <div id="analyticsPane" style="display: none; min-width: 0;">
+        <!-- Control Bar for Analytics -->
+        <div class="control-bar" style="margin-bottom: 1.5rem; background: rgba(17, 24, 39, 0.7); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.25rem;">
+          <div class="search-filter-group" style="justify-content: space-between; width: 100%; align-items: center;">
+            <div style="display: flex; gap: 0.75rem; align-items: center;">
+              <button class="btn btn-primary" id="btnRunDbt" style="background: #e24a35; border-color: #d13d2a;">
+                ⚙️ Run dbt Models
+              </button>
+            </div>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Mô phỏng Datastream CDC &amp; dbt Core trên BigQuery</span>
+          </div>
+        </div>
+
+        <!-- Analytics Split Grid: 2 Columns -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start;">
+          
+          <!-- Column Left: tables -->
+          <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <!-- Customer revenue ranking -->
+            <div class="content-panel">
+              <div class="panel-header-custom" style="background: rgba(0,0,0,0.2); padding: 1rem 1.25rem;">
+                <div class="panel-title-custom" style="color: #38bdf8; font-size: 0.8rem;">
+                  📊 Doanh thu &amp; Công nợ Khách hàng (dim_customers)
+                </div>
+              </div>
+              <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Khách Hàng</th>
+                      <th style="text-align: center;">Số Đơn</th>
+                      <th style="text-align: right;">Doanh Thu BQ</th>
+                      <th style="text-align: right;">Công Nợ AR</th>
+                    </tr>
+                  </thead>
+                  <tbody id="analyticsCustomerRows">
+                    <!-- Dim customers data injected here -->
+                  </tbody>
+                </table>
+              </div>
+              <div class="empty-state" id="analyticsCustomerEmptyState" style="display: block; padding: 2rem 1rem;">
+                <p>Chưa chạy dbt model hoặc chưa có dữ liệu</p>
+              </div>
+            </div>
+
+            <!-- Sales Performance -->
+            <div class="content-panel">
+              <div class="panel-header-custom" style="background: rgba(0,0,0,0.2); padding: 1rem 1.25rem;">
+                <div class="panel-title-custom" style="color: #a7f3d0; font-size: 0.8rem;">
+                  📈 Doanh số Theo Ngày (fct_sales_performance)
+                </div>
+              </div>
+              <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Ngày</th>
+                      <th style="text-align: center;">Số Đơn Hàng</th>
+                      <th style="text-align: right;">Doanh Số</th>
+                    </tr>
+                  </thead>
+                  <tbody id="analyticsSalesRows">
+                    <!-- fct sales performance data injected here -->
+                  </tbody>
+                </table>
+              </div>
+              <div class="empty-state" id="analyticsSalesEmptyState" style="display: block; padding: 2rem 1rem;">
+                <p>Chưa chạy dbt model hoặc chưa có dữ liệu</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column Right: Cash flow and dbt logs -->
+          <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <!-- Cash flow recon tracking -->
+            <div class="content-panel">
+              <div class="panel-header-custom" style="background: rgba(0,0,0,0.2); padding: 1rem 1.25rem;">
+                <div class="panel-title-custom" style="color: #fbbf24; font-size: 0.8rem;">
+                  💸 Đối Soát Dòng Tiền Theo Ngày (fct_cash_flow)
+                </div>
+              </div>
+              <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Ngày</th>
+                      <th style="text-align: right;">Tiền Ngân Hàng</th>
+                      <th style="text-align: right;">Đã Đối Soát</th>
+                      <th style="text-align: center;">Tỷ Lệ Khớp</th>
+                    </tr>
+                  </thead>
+                  <tbody id="analyticsCashFlowRows">
+                    <!-- fct cash flow data injected here -->
+                  </tbody>
+                </table>
+              </div>
+              <div class="empty-state" id="analyticsCashFlowEmptyState" style="display: block; padding: 2rem 1rem;">
+                <p>Chưa chạy dbt model hoặc chưa có dữ liệu</p>
+              </div>
+            </div>
+
+            <!-- dbt Runner Console -->
+            <div class="content-panel">
+              <div class="panel-header-custom" style="background: #111827; padding: 0.75rem 1rem; border-bottom: 1px solid #1f2937; display: flex; justify-content: space-between; align-items: center;">
+                <div class="panel-title-custom" style="color: #e24a35; font-size: 0.75rem; font-family: monospace; font-weight: 700;">
+                  🐚 dbt Compiler Terminal Console
+                </div>
+                <div style="display: flex; gap: 4px;">
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444;"></span>
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;"></span>
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span>
+                </div>
+              </div>
+              <div style="background: #030712; color: #10b981; font-family: 'Courier New', Courier, monospace; font-size: 0.8rem; padding: 1rem; height: 210px; overflow-y: auto; white-space: pre-wrap; line-height: 1.4;" id="dbtConsoleLog">Ready to run. Click "Run dbt Models" to trigger SQL compilation & transformations.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
       <!-- Right side Stack: Pub/Sub monitor & FAST Outbox monitor -->
       <div class="right-sidebar-stack">
         
@@ -1605,10 +1751,28 @@
     const warehouseKpiGrid = document.getElementById('warehouseKpiGrid');
     const olvKpiGrid = document.getElementById('olvKpiGrid');
     const reconKpiGrid = document.getElementById('reconKpiGrid');
+    const analyticsKpiGrid = document.getElementById('analyticsKpiGrid');
     const warehouseControlBar = document.getElementById('warehouseControlBar');
     const warehouseTablePanel = document.getElementById('warehouseTablePanel');
     const olvPane = document.getElementById('olvPane');
     const reconPane = document.getElementById('reconPane');
+    const analyticsPane = document.getElementById('analyticsPane');
+
+    // Analytics Elements
+    const btnRunDbt = document.getElementById('btnRunDbt');
+    const analyticsCustomerRows = document.getElementById('analyticsCustomerRows');
+    const analyticsCustomerEmptyState = document.getElementById('analyticsCustomerEmptyState');
+    const analyticsSalesRows = document.getElementById('analyticsSalesRows');
+    const analyticsSalesEmptyState = document.getElementById('analyticsSalesEmptyState');
+    const analyticsCashFlowRows = document.getElementById('analyticsCashFlowRows');
+    const analyticsCashFlowEmptyState = document.getElementById('analyticsCashFlowEmptyState');
+    const dbtConsoleLog = document.getElementById('dbtConsoleLog');
+
+    // Analytics KPIs
+    const kpiAnalyticsRevenue = document.getElementById('kpiAnalyticsRevenue');
+    const kpiAnalyticsOutstandingAr = document.getElementById('kpiAnalyticsOutstandingAr');
+    const kpiAnalyticsReconRate = document.getElementById('kpiAnalyticsReconRate');
+    const kpiAnalyticsCdcLogs = document.getElementById('kpiAnalyticsCdcLogs');
 
     // OLV View Elements
     const olvRowsEl = document.getElementById('olvRows');
@@ -1723,6 +1887,9 @@
       reconKpiGrid.style.display = 'none';
       reconPane.style.display = 'none';
 
+      analyticsKpiGrid.style.display = 'none';
+      analyticsPane.style.display = 'none';
+
       // Show active pane
       if (tabName === 'olv') {
         olvKpiGrid.style.display = 'grid';
@@ -1732,6 +1899,10 @@
         reconKpiGrid.style.display = 'grid';
         reconPane.style.display = 'block';
         loadReconData();
+      } else if (tabName === 'analytics') {
+        analyticsKpiGrid.style.display = 'grid';
+        analyticsPane.style.display = 'block';
+        loadAnalyticsData();
       } else {
         warehouseKpiGrid.style.display = 'grid';
         warehouseControlBar.style.display = 'flex';
@@ -1929,6 +2100,137 @@
         loadOutbox();
       } catch (err) {
         showToast(err.message, 'error');
+      }
+    });
+
+    // LOAD & RENDER ANALYTICS DATA
+    async function loadAnalyticsData() {
+      try {
+        const r = await fetch('/api/analytics/dashboard');
+        if (!r.ok) throw new Error('Không thể tải dữ liệu báo cáo');
+        const data = await r.json();
+
+        // 1) Update KPIs
+        let totalRevenue = 0;
+        let outstandingAr = 0;
+        data.customers.forEach(c => {
+          totalRevenue += Number(c.total_revenue);
+          outstandingAr += Number(c.outstanding_ar);
+        });
+
+        // Calculate average recon rate across cash flows
+        let totalDeposits = 0;
+        let totalMatched = 0;
+        data.cashFlow.forEach(f => {
+          totalDeposits += Number(f.total_deposits);
+          totalMatched += Number(f.matched_amount);
+        });
+        const reconRate = totalDeposits > 0 ? ((totalMatched / totalDeposits) * 100).toFixed(1) : '0.0';
+
+        kpiAnalyticsRevenue.textContent = fmt.format(totalRevenue);
+        kpiAnalyticsOutstandingAr.textContent = fmt.format(outstandingAr);
+        kpiAnalyticsReconRate.textContent = `${reconRate}%`;
+        kpiAnalyticsCdcLogs.textContent = `${data.diagnostics.rawOrders} / ${data.diagnostics.rawTxs}`;
+
+        // 2) Render tables
+        renderAnalyticsCustomers(data.customers);
+        renderAnalyticsSales(data.sales);
+        renderAnalyticsCashFlow(data.cashFlow);
+      } catch (err) {
+        console.error('Lỗi tải dữ liệu Analytics:', err);
+      }
+    }
+
+    function renderAnalyticsCustomers(customers) {
+      if (!customers || customers.length === 0) {
+        analyticsCustomerRows.innerHTML = '';
+        analyticsCustomerEmptyState.style.display = 'block';
+        return;
+      }
+      analyticsCustomerEmptyState.style.display = 'none';
+      analyticsCustomerRows.innerHTML = customers.map(c => `
+        <tr>
+          <td style="font-weight: 600;">${escapeHtml(c.customer_name)}</td>
+          <td style="text-align: center;">${c.total_orders}</td>
+          <td style="text-align: right; color: var(--primary); font-weight: 600;">${fmt.format(Number(c.total_revenue))}</td>
+          <td style="text-align: right; color: var(--warning);">${fmt.format(Number(c.outstanding_ar))}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderAnalyticsSales(sales) {
+      if (!sales || sales.length === 0) {
+        analyticsSalesRows.innerHTML = '';
+        analyticsSalesEmptyState.style.display = 'block';
+        return;
+      }
+      analyticsSalesEmptyState.style.display = 'none';
+      analyticsSalesRows.innerHTML = sales.map(s => {
+        const dateStr = new Date(s.sales_date).toLocaleDateString('vi-VN');
+        return `
+          <tr>
+            <td>${dateStr}</td>
+            <td style="text-align: center;">${s.total_orders}</td>
+            <td style="text-align: right; color: var(--success); font-weight: 600;">${fmt.format(Number(s.total_revenue))}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderAnalyticsCashFlow(cashFlow) {
+      if (!cashFlow || cashFlow.length === 0) {
+        analyticsCashFlowRows.innerHTML = '';
+        analyticsCashFlowEmptyState.style.display = 'block';
+        return;
+      }
+      analyticsCashFlowEmptyState.style.display = 'none';
+      analyticsCashFlowRows.innerHTML = cashFlow.map(f => {
+        const dateStr = new Date(f.recon_date).toLocaleDateString('vi-VN');
+        const rateColor = Number(f.reconciliation_rate) >= 90 ? 'var(--success)' : (Number(f.reconciliation_rate) >= 50 ? 'var(--warning)' : 'var(--danger)');
+        return `
+          <tr>
+            <td>${dateStr}</td>
+            <td style="text-align: right;">${fmt.format(Number(f.total_deposits))}</td>
+            <td style="text-align: right; color: var(--success);">${fmt.format(Number(f.matched_amount))}</td>
+            <td style="text-align: center; color: ${rateColor}; font-weight: 600;">${f.reconciliation_rate}%</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // dbt Model Runner Trigger
+    btnRunDbt.addEventListener('click', async () => {
+      btnRunDbt.disabled = true;
+      btnRunDbt.innerHTML = '⚙️ Running dbt...';
+      dbtConsoleLog.textContent = 'Starting dbt compilation and run pipeline...\n';
+      
+      try {
+        const r = await fetch('/api/analytics/dbt-run', { method: 'POST' });
+        const res = await r.json();
+        
+        if (!r.ok) throw new Error(res.error || 'Lỗi chạy dbt models');
+
+        // Output logs line-by-line with a small delay to look realistic
+        let logIndex = 0;
+        function printNextLog() {
+          if (logIndex < res.logs.length) {
+            dbtConsoleLog.textContent += res.logs[logIndex] + '\n';
+            dbtConsoleLog.scrollTop = dbtConsoleLog.scrollHeight; // Scroll to bottom
+            logIndex++;
+            setTimeout(printNextLog, 150);
+          } else {
+            showToast('dbt run hoàn tất thành công!', 'success');
+            btnRunDbt.disabled = false;
+            btnRunDbt.innerHTML = '⚙️ Run dbt Models';
+            loadAnalyticsData();
+          }
+        }
+        printNextLog();
+      } catch (err) {
+        dbtConsoleLog.textContent += `[ERROR] ${err.message}\n`;
+        showToast(err.message, 'error');
+        btnRunDbt.disabled = false;
+        btnRunDbt.innerHTML = '⚙️ Run dbt Models';
       }
     });
 
@@ -2764,6 +3066,9 @@
       }
       if (activeTab === 'recon') {
         loadReconData();
+      }
+      if (activeTab === 'analytics') {
+        loadAnalyticsData();
       }
     }, 2000);
   </script>

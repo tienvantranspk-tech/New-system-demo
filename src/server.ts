@@ -7,6 +7,7 @@ import { eventBus } from './eventBus';
 import { OutboxWorker } from './outboxWorker';
 import { initProjector } from './projector';
 import { initReconciliationEngine } from './reconciliationEngine';
+import { initAnalyticsEngine, runDbtModels } from './analyticsEngine';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -557,6 +558,42 @@ app.post('/api/reconciliation/approve-match', async (req, res) => {
   }
 });
 
+// --- ANALYTICS APIS ---
+
+// 1) Get consolidated analytics dashboard data
+app.get('/api/analytics/dashboard', async (_req, res) => {
+  try {
+    const customersRes = await pool.query('SELECT * FROM bq_dim_customers ORDER BY total_revenue DESC');
+    const salesRes = await pool.query('SELECT * FROM bq_fct_sales_performance ORDER BY sales_date DESC LIMIT 15');
+    const cashRes = await pool.query('SELECT * FROM bq_fct_cash_flow ORDER BY recon_date DESC LIMIT 15');
+
+    const rawOrdersCount = await pool.query('SELECT COUNT(*) FROM bq_raw_orders');
+    const rawTxsCount = await pool.query('SELECT COUNT(*) FROM bq_raw_bank_transactions');
+
+    res.json({
+      customers: customersRes.rows,
+      sales: salesRes.rows,
+      cashFlow: cashRes.rows,
+      diagnostics: {
+        rawOrders: parseInt(rawOrdersCount.rows[0].count),
+        rawTxs: parseInt(rawTxsCount.rows[0].count)
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+// 2) Trigger dbt compilation & transformation run
+app.post('/api/analytics/dbt-run', async (_req, res) => {
+  try {
+    const result = await runDbtModels();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
 const port = Number(process.env.PORT) || 8080;
 app.listen(port, () => {
   console.log(`ERP sample running at http://localhost:${port}`);
@@ -570,4 +607,7 @@ app.listen(port, () => {
 
   // Start cash reconciliation engine
   initReconciliationEngine();
+
+  // Start analytics CDC pipeline
+  initAnalyticsEngine();
 });

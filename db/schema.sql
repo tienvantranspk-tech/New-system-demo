@@ -79,3 +79,47 @@ CREATE TABLE IF NOT EXISTS bank_transactions (
   suggested_reason      TEXT,
   transaction_time      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- --- PART 4: REAL-TIME ANALYTICS & BIGQUERY MOCKUP ---
+
+-- 1) CDC Raw BigQuery Tables (Simulating Datastream Target in BigQuery)
+CREATE TABLE IF NOT EXISTS bq_raw_orders (
+  id                    SERIAL PRIMARY KEY,
+  order_number          TEXT NOT NULL,
+  customer_name         TEXT NOT NULL,
+  total_amount          NUMERIC(12,2) NOT NULL,
+  status                TEXT NOT NULL,
+  updated_at            TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS bq_raw_bank_transactions (
+  id                    SERIAL PRIMARY KEY,
+  bank_reference        TEXT NOT NULL,
+  bank_name             TEXT NOT NULL,
+  amount                NUMERIC(12,2) NOT NULL,
+  status                TEXT NOT NULL,
+  transaction_time      TIMESTAMPTZ NOT NULL
+);
+
+-- 2) dbt Target Tables / Views (Simulating dbt Core transformation layer)
+CREATE TABLE IF NOT EXISTS bq_dim_customers (
+  customer_name         TEXT PRIMARY KEY,
+  total_orders          INTEGER NOT NULL DEFAULT 0,
+  total_revenue         NUMERIC(12,2) NOT NULL DEFAULT 0,
+  outstanding_ar        NUMERIC(12,2) NOT NULL DEFAULT 0,
+  last_purchase         TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS bq_fct_sales_performance (
+  sales_date            DATE PRIMARY KEY,
+  total_orders          INTEGER NOT NULL DEFAULT 0,
+  total_revenue         NUMERIC(12,2) NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS bq_fct_cash_flow (
+  recon_date            DATE PRIMARY KEY,
+  total_deposits        NUMERIC(12,2) NOT NULL DEFAULT 0,
+  matched_amount        NUMERIC(12,2) NOT NULL DEFAULT 0,
+  unmatched_amount      NUMERIC(12,2) NOT NULL DEFAULT 0,
+  reconciliation_rate   NUMERIC(5,2) NOT NULL DEFAULT 0
+);
