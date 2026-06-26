@@ -15,8 +15,16 @@ app.use(express.json());
 // Global state to simulate FAST system status (Online / Offline)
 let fastDowntime = false;
 
-// Serve the web UI (web/index.html)
-app.use(express.static(join(__dirname, '..', 'web')));
+// Serve the web UI (web/index.html) with cache disabled to prevent browser caching
+app.use(express.static(join(__dirname, '..', 'web'), {
+  setHeaders: (res, path) => {
+    if (path.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+}));
 
 // Health check (mirrors a Cloud Run health endpoint)
 app.get('/health', async (_req, res) => {
